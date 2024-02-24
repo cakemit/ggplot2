@@ -1,0 +1,1969 @@
+---
+title: "Resumo ggplot"
+output:
+  html_notebook:
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
+    # keep_md: true
+---
+
+[GGPLOT2 - Elegant Graphics for Data Analysis](https://ggplot2-book.org/index.html) by Hadley Wickham, Danielle Navarro, and Thomas Lin Pedersen
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set( echo=TRUE, message=FALSE, warning=FALSE, fig.width = 5, fig.height = 3 )
+
+library(tidyverse)
+library(patchwork)
+```
+
+
+<br>
+
+# Intro
+
+This is my personal cheatsheet for when I need to recall basic ggplot commands and features.
+
+
+```
+# To list datasets in ggplot:
+data(package = "ggplot2")$results[ , "Item"]
+
+# To list the data sets in all available packages
+data(package = .packages(all.available = TRUE))
+```
+
+<br>
+
+# THEME
+
+<br>
+
+My favorite custom theme:
+
+```{r}
+theme_set(theme_light())
+theme_update(
+  panel.grid.minor = element_blank(),
+  plot.title = element_text(size = 12, colour = "gray30", face = "bold"),
+  plot.subtitle = element_text(face = 'italic', colour = "gray50", size = 10),
+  plot.caption = element_text(colour = "gray50", hjust=0, size = 8),
+  legend.title = element_blank()
+)
+```
+
+<br>
+
+To edit a specific setting or option within a ggplot
+
+```         
+theme(
+  line = element_line(colour = 'gray70'),
+  rect = element_rect(colour = 'gray70'),
+  text = element_text(colour = 'gray70'),
+  panel.border = element_rect(fill = NA, color = "gray90"),
+  axis.title = element_text(),
+  axis.ticks = element_blank(),
+  axis.text = element_text(colour = "gray50", size = 9),
+  legend.position = "top",
+  legend.text = element_text(color="Gray50", size = 8),
+  plot.margin = margin(rep(10, 4)) # add some white space around the plot
+)
+```
+
+<br>
+
+To list each of the specific settings or options, just call the theme:
+
+```         
+theme_classic()
+```
+
+<br>
+
+You can also list settings of a specific element of the plot theme.
+
+```{r}
+theme_classic()$panel.grid
+```
+
+<br>
+
+# COLORS
+
+[Slide presentation on using colors](https://www.reisanar.com/slides/colors#1)   
+
+[Comprehensive list of default palettes available in R](https://github.com/EmilHvitfeldt/r-color-palettes)
+
+<br>
+
+You can modify the default ggplot colors by using predefined color palettes available in different R packages.
+The most commonly used color scales, include:
+
+-   Viridis color scales [viridis package].
+-   Colorbrewer palettes [RColorBrewer package]
+-   Grey color palettes [ggplot2 package]
+-   Scientific journal color palettes [ggsci package]
+-   Wes Anderson color palettes [wesanderson package]
+
+Learn more at: [Top R Color Palettes to Know for Great Data Visualization](https://www.datanovia.com/en/blog/top-r-color-palettes-to-know-for-great-data-visualization/)
+
+<br>
+
+## ggplot default
+
+<br>
+
+**Specify a single color**
+
+-   [Awesome List Of 657 R Color Names](https://www.datanovia.com/en/blog/awesome-list-of-657-r-color-names/)\
+-   [Awesome List of Hexadecimal Colors You Should Have](https://www.datanovia.com/en/blog/awesome-list-of-hexadecimal-colors-you-should-have/)
+
+
+```{r}
+# Box plot
+ggplot(iris, aes(Species, Sepal.Length)) + 
+  geom_boxplot(fill = "#FFDB6D", color = "#C4961A") +
+  theme_minimal()
+
+# Scatter plot
+ggplot(iris, aes(Sepal.Length, Sepal.Width)) + 
+  geom_point(color = "#00AFBB") +
+  theme_minimal()
+```
+
+<br>
+
+**Color by group/category**
+
+
+```{r}
+ggplot(iris, aes(Species, Sepal.Length)) + 
+  geom_boxplot(aes(fill = Species)) +
+  theme(legend.position = "top") +
+  labs(title="Box plot by group")
+```
+
+```{r}
+ggplot(iris, aes(Sepal.Length, Sepal.Width)) + 
+  geom_point(aes(color = Species)) +
+  theme(legend.position = "top") +
+  labs(title="Scatter plot by group")
+```
+
+
+<br>
+
+**Get the HEX code**
+
+```{r fig.width = 3, fig.height = 3}
+scales::show_col(scales::hue_pal()(4))
+```
+
+<br>
+
+**Gradient colors**
+
+[ggplot scale_gradient()](https://ggplot2.tidyverse.org/reference/scale_gradient.html#details):
+
+For gradient colors, you map the argument `color` and/or `fill` to a continuous variable.
+
+-   `scale_color_gradient()`, `scale_fill_gradient()` for sequential gradients between two colors
+-   `scale_color_gradient2()`, `scale_fill_gradient2()` for diverging gradients
+-   `scale_color_gradientn()`, `scale_fill_gradientn()` for gradient between n colors
+
+<br>
+
+Set gradient between 2 colors and change the colors for low and high ends of the gradient:
+
+```{r}
+# Specify the colors for low and high ends of gradient
+ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
+  geom_point(aes(color = Sepal.Length)) +
+  scale_color_gradient(low = "blue", high = "red") +
+  labs(title="Sequential")
+```
+
+```{r}
+# Specify also the colour for mid point
+ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
+  geom_point(aes(color = Sepal.Length)) +
+  scale_color_gradient2(midpoint = mean(iris$Sepal.Length), low = "blue", mid = "white",
+                        high = "red", space = "Lab" ) +
+  labs(title="Diverging")
+```
+
+
+
+<br>
+
+
+```{r fig.width = 5, fig.height = 3}
+ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
+  geom_point(aes(color = Sepal.Length)) + 
+  scale_color_gradientn(colours = rainbow(5)) +
+  labs(title="Rainbow gradient (5 colors)")
+```
+
+
+<br>
+
+Set ggplot color manually:
+
+-   `scale_fill_manual()` for box plot, bar plot, violin plot, dot plot, etc
+-   `scale_color_manual()` for lines and points
+
+<br>
+
+Use grey color scales:
+
+-   `scale_fill_grey()` for box plot, bar plot, violin plot, dot plot, etc
+-   `scale_colour_grey()` for points, lines, etc
+
+
+<br>
+
+## ColorBrewer
+
+Best all around. Easy **discrete** palettes for **colorblindness**
+
+
+```{r fig.width=6, fig.asp= 2}
+library(RColorBrewer)
+display.brewer.all() # to check all colorbrewer palettes
+```
+
+
+**Palettes for colorblindness:**
+
+```{r fig.width=6, fig.asp=1.5}
+display.brewer.all(colorblindFriendly = TRUE)
+```
+
+
+<br>
+
+```{r message=FALSE, warning=FALSE}
+ggplot(iris, aes(Sepal.Length, Sepal.Width))+
+  geom_point(aes(color = Species)) +
+  scale_color_brewer(palette = "Dark2")+
+  geom_smooth(aes(color = Species, fill = Species), formula = y ~ x, method = "lm") + 
+  scale_fill_brewer(palette = "Dark2") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(title="Brewer on a plot")
+```
+
+<br>
+
+Visualize a single Brewer palette by specifying its name:
+
+```{r fig.width=6, fig.height=2}
+display.brewer.pal(n = 8, name = "Dark2")
+```
+
+<br>
+
+Get the HEX code of the palette
+
+```{r}
+brewer.pal(3, "Dark2")
+```
+
+<br>
+
+## Viridis
+
+Best for **colorblindness** and plots that need **gradient** range of colors.
+
+
+```{r, message=FALSE, warning=FALSE}
+library("viridis")           # Load
+viridis(6)
+```
+
+<br>
+
+Key functions:
+
+-   `viridis(n), magma(n), inferno(n) and plasma(n)`: Generate color palettes for base plot, where n is the number of colors to return.\
+-   `scale_color_viridis()`: Change the color of points, lines and texts\
+-   `scale_fill_viridis()`: Change the fill color of areas (box plot, bar plot, etc)
+
+<br>
+
+Four options are available:   
+
+* "magma" (or "A")    
+* "inferno" (or "B")    
+* "plasma" (or "C")   
+* "viridis" (or "D", the default option)    
+
+
+```{r fig.width=10, fig.height=7}
+plt <- function(nome, opt) {
+  ggplot(iris, aes(Sepal.Length, Sepal.Width))+
+  geom_point(aes(color = Sepal.Length)) +
+  scale_color_viridis(option = opt)+
+  theme(legend.position = "bottom") +
+  labs(title = nome, x = element_blank(), y = element_blank())
+}
+
+plt("Magma", "A") + plt("Inferno", "B") + plt("Plasma", "C") + plt("Viridis", "D") +
+  plot_annotation(title = "GRADIENT color palettes")
+```
+
+<br>
+
+
+```{r fig.width=10, fig.height=7}
+plt <- function(nome, opt) {
+  ggplot(iris, aes(Sepal.Length, Sepal.Width))+
+  geom_point(aes(color = Species)) +
+  geom_smooth(aes(color = Species, fill = Species), formula = y ~ x, method = "lm") + 
+  scale_color_viridis(discrete = TRUE, option = opt)+
+  scale_fill_viridis(discrete = TRUE, option = opt) +
+  theme(legend.position = "bottom") +
+  labs(title = nome, x = element_blank(), y = element_blank())
+}
+
+plt("Magma", "A") + plt("Inferno", "B") + plt("Plasma", "C") + plt("Viridis", "D") +
+  plot_annotation(title = "DISCRETE color palettes")
+```
+
+
+```{r, include=FALSE}
+rm(list=ls())
+```
+
+<br>
+
+## ggsci
+
+[ggsci package vignete](https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html)
+
+Scientific journal color palettes.     
+
+```{r}
+library(ggsci)
+
+# Some display plots:
+p1 <- ggplot(subset(diamonds, carat >= 2.2), aes(x=table, y=price, colour=cut)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(formula = y ~ x, method = "loess", alpha = 0.05, size = 1, span = 1) +
+  labs(title="Color")
+
+p2 <- ggplot(subset(diamonds, carat > 2.2 & depth > 55 & depth < 70), aes(x=depth, fill=cut)) +
+  geom_histogram(colour = "black", binwidth = 1, position = "dodge") +
+  labs(title="Fill")
+```
+
+
+
+<br>
+
+**Lancet Journal (`lancet`)**
+
+```{r fig.height=4, fig.width=10}
+p1 <- p1 + scale_color_lancet()
+p2 <- p2 + scale_fill_lancet()
+p1 + p2
+```
+
+<br>
+
+**Journal of Clinical Oncology (`jco`)**
+
+```{r fig.height=4, fig.width=10}
+p1 <- p1 + scale_color_jco()
+p2 <- p2 + scale_fill_jco()
+p1 + p2
+```
+
+
+<br>
+
+**Nature Publishing Group (`npg`)** 
+
+```{r fig.height=4, fig.width=10}
+p1 <- p1 + scale_color_npg()
+p2 <- p2 + scale_fill_npg()
+p1 + p2
+```
+
+<br>
+
+**American Association for the Advancement of Science (`aaas`)**
+
+```{r fig.height=4, fig.width=10}
+p1 <- p1 + scale_color_aaas()
+p2 <- p2 + scale_fill_aaas()
+p1 + p2
+```
+
+
+
+
+
+
+<br>
+
+**Tron Legacy (`tron`)**
+
+```{r fig.height=4, fig.width=10}
+p1 <- p1 + scale_color_tron()
+p2 <- p2 + scale_fill_tron()
+p1 + p2
+```
+
+```{r, include=FALSE}
+rm(list=ls())
+```
+
+<br>
+
+# BASIC PLOTS
+
+## Scatter chart
+
+```{r fig.width = 5, fig.height = 3}
+ggplot(data = mpg) + # layer1 => data
+  geom_point(        # layer2 => geom (points)
+    mapping = aes(x = displ, y = hwy) # mapping => how variables map to visuals
+  ) +
+  theme_classic()
+```
+
+<br>
+
+A further add-on to the above plot is adding a fitting line to the data to make it more meaningful.
+The fittings are more informative giving an overview of the trends and the correlation between the variables.
+We added a linear fit to the data that shows a positive trend in the rise in temperature over the years.
+By adding all these features to the above scatter plot, we made it more self-explanatory.
+
+```{r fig.width = 5, fig.height = 3}
+### scatter plot with linear fit
+mpg |>  ggplot(aes(displ, hwy)) +
+  geom_smooth(method = "lm", se = FALSE,            # linear fit to the data point
+              color = "blue", size = 1.5) +         # tuning line color and thickness
+  geom_point(alpha = 0.5, size = 2) +               # tuning the transparency and size of data points
+  # scale_x_continuous(breaks=seq(1960,2020,5)) +   # breaking x-axis ticks in intervals of 10
+  labs(x = "Displ", y = "Highway consumption",      # adding titles to the axis
+       title = "Title goes here",                   # adding title to the plot
+       subtitle = "Subtitle goes here",             # adding subtitles to the plot
+       caption = "Source: goes here")               # adding caption to the plot
+
+```
+
+<br>
+
+Sometimes the behavior of the data is more complex and in those cases, a linear fit is not an option.
+For these types of cases either we can use the default smoothing function or define our own function.
+
+Below we can see three plots, one on the left uses the default `geom_smooth()` function, the middle one uses the linear fit and the rightmost uses the user-defined function.
+
+```{r fig.width=10, fig.height=4}
+### default smooth fit
+p2 <- mpg |> ggplot(aes(displ, hwy)) + 
+  geom_smooth(stat = "smooth", color = "blue", size = 1.5) +
+  geom_point() +
+  labs(x = "Highway consumption", y = "Avg. Temperature (°C)")
+
+### linear fit
+p3 <- mpg |> ggplot(aes(displ, hwy)) + 
+  geom_smooth(method = "lm", se = FALSE,
+              color = "blue", size = 1.5) +
+  geom_point() +
+  labs(x = "Highway consumption", y = "Avg. Temperature (°C)")
+
+### user defined formula for fitting
+p4 <- mpg |> ggplot(aes(displ, hwy)) + 
+  geom_smooth(method = "lm", 
+              formula = y~x+I(x^2)+I(x^3),        # user defined function
+              color = "blue", size = 1.5) +
+  geom_point() +
+  labs(x = "Highway consumption", y = "Avg. Temperature (°C)")
+
+p2 + p3 + p4
+```
+
+```{r, include=FALSE}
+rm(list=ls()) # Limpa o global environment
+```
+
+<br>
+
+## Line chart
+
+[cookbook-r](http://www.cookbook-r.com/Graphs/Bar_and_line_graphs_(ggplot2)/)
+
+[Article 1](https://towardsdatascience.com/how-to-make-stunning-line-charts-in-r-a-complete-guide-with-ggplot2-91e5a607ea46)
+
+```{r echo=FALSE}
+data <- tibble(
+  quarter=c("Q1", "Q1", "Q2", "Q2", "Q3", "Q3", "Q4", "Q4"),
+  product=c("A", "B", "A", "B", "A", "B", "A", "B"),
+  profit=c(10, 14, 12, 11, 13, 15, 16, 18)
+)
+```
+
+<br>
+
+**Simple line chart**
+
+<br>
+
+**Multiple lines**
+
+To draw multiple lines, the points must be grouped by a variable; otherwise all points will be connected by a single line.
+In this case, we want them to be grouped by sex.
+
+PLOT Multiple lines by color Planos
+
+```{r fig.width = 5, fig.height = 3}
+data |> 
+  ggplot(aes(x=quarter, y=profit, group = product)) +
+  geom_line(aes(color = product), size = 1) + 
+  scale_color_brewer(palette = "Dark2") +
+  # Escala dos axis
+  scale_y_continuous(expand = c(0,0), limits = c(0,NA)) +
+  scale_x_discrete(expand = c(0,0)) +
+  # Texto: Títulos e notas
+  labs(
+    title = "Quarterly Profit (in million U.S. dollars)",
+    subtitle = "A simple line chart",
+    caption = "Source: ImaginaryCo",
+    x = "Quarter of 2020",
+    y = "Profit in 2020"
+  ) +
+  theme(
+    panel.border = element_rect(fill = NA),
+    panel.grid.major.y = element_line(linetype = 'dashed')
+  )
+```
+
+<br>
+
+*Too many lines! Need gradient colors*
+
+I have data with about 100 ordered categories.
+I would like to plot each category as a line separately, with the line colors ranging from a low value (say, blue) to a high value (say, red).
+
+Since a discrete legend is useless anyway, you could use a continuous color scale:
+
+```{r fig.width = 5, fig.height = 3}
+df <- data.frame(expand.grid(1:100, seq(0, 1, by = .1)))
+names(df) <- c("category", "X")
+df <- within(df, {
+  Y <- pnorm(X, mean = 1:100 / 100)
+  category <- factor(1:100)
+  })
+
+ggplot(data = df, aes(x = X, y = Y, color = as.integer(category), group = category)) +
+  geom_line() +
+  scale_colour_gradient(name = "category", 
+                        low = "blue", high = "red")
+```
+
+<br>
+
+And you can change the label names on the legend:
+
+```{r fig.width = 5, fig.height = 3}
+ggplot(data = df, aes(x = X, y = Y, color = as.integer(category), group = category)) +
+  geom_line() +
+  scale_colour_gradient(name = "category", 
+                        breaks = c(1,50,100), labels = c('Low','Mid','High'),
+                        low = "blue", high = "red")
+```
+
+<br>
+
+## Bar chart
+
+[cookbook-r](http://www.cookbook-r.com/Graphs/Bar_and_line_graphs_(ggplot2)/)\
+[article](https://towardsdatascience.com/how-to-make-stunning-bar-charts-in-r-a-complete-guide-with-ggplot2-c8f3b87de4d1)
+
+```{r fig.width = 5, fig.height = 4}
+data |> group_by(quarter) |> 
+  summarise(profit = sum(profit), .groups = "drop") |> 
+  ggplot(aes(x=quarter, y=profit)) +
+  # geom_col() == geom_bar(stat = "identity")
+  # geom_col() + # default = stacked bars
+  geom_bar(stat = 'identity', fill = "lightblue") + 
+  geom_text(aes(label=profit), vjust = -0.5, size = 4) +
+  scale_y_continuous(expand = c(0,2))
+```
+
+
+You can adjust the width of the bar. The default width between bars is 0.9. The closer the width is to 1, the closer together the bars will be. The close the width is to 0, the more spread out the bars will be.
+
+```
+ggplot(df, aes(x=x_variable)) +
+  geom_bar(width=.4)
+```
+
+
+Adjust Spacing Between Bars in Clustered Bar Chart: The width value controls the spacing between clusters while the position_dodge() value controls the spacing between bars within the same cluster.
+
+```         
+ggplot(df, aes(x=x_variable, y=y_variable, fill=fill_variable)) +
+  geom_bar(width=.5, stat='identity', position=position_dodge(.7))
+```
+
+Or you can set space between bars: As of ggplot 3.0.0, you can use position_dodge2.
+It takes a padding argument that adds space in between the bars.
+
+
+<br>
+
+### Stacked bar
+
+[stacked](https://ggplot2.tidyverse.org/reference/position_stack.html)
+
+The ggplot2 package uses stacked bar charts by default.
+Stacked bar charts are best used when all portions are colored differently.
+
+To change the coloring, you only need to change the fill value in the data layer.
+Here's an example:
+
+```{r fig.height=4, fig.width=10}
+p1 <- data |> 
+  ggplot(aes(x=quarter, y=profit, fill = product)) +
+  geom_col(color = "white") + # default position = "stack"
+  scale_fill_brewer(palette = "Dark2") +
+  # Label the groups
+  geom_text(aes(label=profit),
+            position = position_stack(vjust = 0.5), 
+            color = "black", size = 4) +
+  # Label the total on top of the bars
+  geom_text(aes(label=scales::number(after_stat(y)),
+                group = quarter),
+            stat = "summary", fun = sum, vjust=-1, 
+            fontface = "bold") +
+  # Create a little breathing space on top of the chart:
+  scale_y_continuous(expand = expansion(mult = c(0,0.1))) +
+  labs(title = "Stacked")
+
+p2 <- data |> 
+  mutate(pct = profit/sum(profit), .by = quarter) |> 
+  ggplot(aes(x=quarter, y=pct, fill = product)) +
+  geom_col(color = "white") +
+  geom_text(aes(label=scales::percent(pct, accuracy = 1), group=product), 
+            position = position_fill(.5)) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_y_continuous(labels = NULL, expand = expansion(mult = c(0,0))) +
+  labs(title = "Stacked to 100%")
+
+p1 + p2
+```
+
+<br>
+
+Here's a general solution, that adds a "position" column to the dataframe, to use with geom_text() and place the labels exactly where they belong:
+
+```{r fig.width = 5, fig.height = 3}
+mpg |> group_by(class, year = as.factor(year)) |> 
+  tally() |> 
+  ungroup() |>
+  arrange(desc(class)) |> 
+  group_by(year) |> 
+  mutate(pos = cumsum(n) - n/2) |> # create "position" column as 1/2 the y-axis variable
+  ggplot() +
+  geom_bar(aes(x=year, y=n, fill = class),stat = "identity") +
+  geom_text(aes(x=year, 
+                y=pos, # use "position" column
+                label = prettyNum(n,big.mark = ".", decimal.mark = ",")), 
+            vjust = 0,  size = 2) +
+  scale_fill_brewer(palette = "Set2") +
+  scale_y_continuous(labels = scales::comma) +
+  theme_bw() +
+  labs(title="Place data labels in the middle manually")
+```
+
+<br>
+
+### Grouped bar
+
+```{r fig.width = 5, fig.height = 4}
+data |> 
+  ggplot(aes(x = quarter, y = profit, fill = product)) +
+  geom_col(position = position_dodge()) +
+  scale_fill_brewer(palette = "Dark2") +
+  geom_text(aes(label=profit), 
+            position = position_dodge(0.9), vjust = -0.5, size = 4)
+```
+
+<br>
+
+### Horizontal bar
+
+**Horizontal bar charts** are useful when there are many categories on the x-axis or when their names are long.
+The `coord_flip()` is used to turn any vertical bar chart into a horizontal one:
+
+```{r fig.height=4, fig.width=10}
+p1 <- data |> 
+  group_by(quarter) |> 
+  summarise(profit = sum(profit), .groups = "drop") |> 
+  ggplot(aes(x=quarter, y=profit)) +
+  geom_col(fill = "lightblue") +
+  geom_text(aes(label = profit), hjust = -0.5, size = 4) + 
+  scale_y_continuous(expand = c(0,2.5)) +
+  coord_flip() 
+
+p2 <- data |> 
+  ggplot(aes(x=quarter, y=profit, 
+             fill = product)) + # defines global fill to group everywhere by product
+  geom_col(position = position_dodge()) + 
+  geom_text(aes(label = profit), 
+            position = position_dodge(0.9), hjust = -0.5, size = 4) +
+  scale_fill_npg() +
+  scale_y_continuous(expand = c(0,1.5)) +
+  coord_flip()
+
+p1 + p2
+```
+
+<br>
+
+## Area chart
+
+Stacking is also the default behaviour for most area plots.
+Stacking is also useful for time series.
+
+<br>
+
+```{r fig.width = 5, fig.height = 3}
+ggplot(data, aes(x = quarter, y = profit, fill=product, group=product)) +
+  geom_area() 
+```
+
+```{r, include=FALSE}
+rm(list=ls()) # Limpa o global environment
+```
+
+<br>
+
+## Combo bar+line
+
+<br>
+
+**COWPLOT**
+
+[Cowplot vignettes](https://wilkelab.org/cowplot/articles/index.html)
+
+Let's make two separate plots and then draw them on top of each other.
+First, let's draw a bar plot of the number of cars in different classes in the mpg dataset.
+
+```{r  fig.width = 5, fig.height = 3}
+city_mpg <- mpg |>
+  mutate(class = fct_lump(class, 4, other_level = "other")) |>
+  group_by(class) |>
+  summarize(
+    mean_mpg = mean(cty),
+    count = n()
+  ) |> mutate(
+    class = fct_reorder(class, count)
+  ) |>
+  mutate(class = fct_reorder(class, -mean_mpg))
+
+p1 <- ggplot(city_mpg, aes(class, count)) +
+  geom_col(fill = "#6297E770") + 
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.05)),
+    position = "right"
+  ) +
+  theme_minimal_hgrid(11, rel_small = 1) + # cowplot theme
+  theme(
+    panel.grid.major = element_line(color = "#6297E770"),
+    axis.line.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.title.x = element_blank(),
+    axis.ticks = element_blank(),
+    axis.ticks.length = grid::unit(0, "pt"),
+    axis.text.y = element_text(color = "#6297E7"),
+    axis.title.y = element_text(color = "#6297E7")
+  )
+
+p2 <- ggplot(city_mpg, aes(class, mean_mpg)) + 
+  geom_point(size = 3, color = "#D5442D") + 
+  scale_y_continuous(limits = c(10, 21)) +
+  theme_half_open(11, rel_small = 1) + # cowplot theme
+  theme(
+    axis.ticks.y = element_line(color = "#BB2D05"),
+    axis.text.y = element_text(color = "#BB2D05"),
+    axis.title.y = element_text(color = "#BB2D05"),
+    axis.line.y = element_line(color = "#BB2D05")
+  )
+
+# The resulting plot has dual axes. Plot alignment and plot placement are separated.
+aligned_plots <- align_plots(p1, p2, align="hv", axis="tblr")
+ggdraw(aligned_plots[[1]]) + draw_plot(aligned_plots[[2]])
+```
+
+```{r, include=FALSE}
+rm(list=ls()) # Limpa o global environment
+```
+
+<br>
+
+**GGPLOT**
+
+[R Graph Gallery - Dual Y axis](https://r-graph-gallery.com/line-chart-dual-Y-axis-ggplot2.html)
+
+Combine bar and line chart
+
+Sometimes while dealing with hierarchical data we need to combine two or more various chart types into a single chart for better visualization and analysis.
+
+Dataset in use: Courses Sold vs Students Enrolled
+
+Year Courses Sold Percentage Of Students Enrolled 2014 35 30% 2015 30 25% 2016 40 30% 2017 25 50% 2018 30 40% 2019 35 20% 2020 65 60%
+
+```{r fig.width = 5, fig.height = 3}
+year <- c(2014, 2015, 2016, 2017, 2018, 2019,2020)
+course <- c(35, 30, 40, 25, 30, 35, 65)
+penroll <- c(0.3, 0.25, 0.3, 0.5, 0.4, 0.2, 0.6)
+  
+perf <- data.frame(year, course, penroll)
+
+ggplot(perf)  + 
+  geom_bar(aes(x=year, y=course),stat="identity", fill="cyan",colour="#006000")+
+  geom_line(aes(x=year, y=penroll),stat="identity",color="red")+
+  labs(title= "Courses vs Students Enrolled in GeeksforGeeks",
+       x="Year",y="Number of Courses Sold")
+```
+
+In the above plot, we can observe that the bar plot is in proper shape as expected, but the line plot is merely visible.
+It happens due to the scaling factor since the line plot is for the percentage of students which is in decimal and the current vertical axis having very large values.
+So, we need a secondary axis in order to fit the line properly in the same chart area.
+
+As scaling comes into the picture, we have to use the R function scale_y_continuous( ) which comes in the ggplot2 package.
+Also, another function sec_axis( ) is used to add a secondary axis and assign the specifications to it.
+
+Syntax:
+
+`sec_axis(trans,name,breaks,labels,guide)`
+
+Parameters :
+
+trans : A formula or function needed to transform.
+name : The name of the secondary axis.
+Since we are dealing with a secondary Y-axis, so we need to write the command inside scale_y_continuous( ).
+
+Syntax:
+
+`scale_y_continuous(name,labels,position,sec.axis,limits,breaks)`
+
+The scaling factor is the trickiest part to handle while dealing with a secondary axis.
+Since the secondary axis needs to be in percentage we have to use the scale factor of 0.01 and write the formula of conversion in the trans argument of sec_axis( ).
+And you are scaling with 0.01 in the formula, you also have to multiply the same axis with 100 in the geom_line( ) in order to make balance in scaling.
+
+```{r fig.width = 5, fig.height = 3}
+# Plotting Charts and adding a secondary axis
+ggplot(perf)  + 
+  geom_bar(aes(x=year, y=course),stat="identity", fill="cyan",colour="#006000")+
+  geom_line(aes(x=year, y=100*penroll),stat="identity",color="red",size=2)+
+  labs(title= "Courses vs Students Enrolled in GeeksforGeeks",
+       x="Year",y="Number of Courses Sold")+
+  scale_y_continuous(sec.axis=sec_axis(~.*0.01,name="Percentage"))
+```
+
+<br>
+
+The secondary axis added will be in the form of fractional value as we can see above.
+But we need the secondary axis in percentage.
+In order to convert to percentage, we have to use the arguments labels inside the sec_axis( ).
+
+Some important keywords used are :
+
+scale: It is used for scaling the data.
+A scaling factor is multiplied by the original data value.
+labels: It is used to assign labels.
+
+The function used is scale_y_continuous( ) which is a default scale in "y-aesthetics" in the library ggplot2.
+Since we need to add "percentage" in the labels of the Y-axis, the keyword "labels" is used.
+
+Now use below the command to convert the y-axis labels into percentages.
+
+scales : : percent
+
+This will simply scale the y-axis data from decimal to percentage.
+It multiplies the present value by 100.
+The scaling factor is 100.
+
+```{r fig.width = 5, fig.height = 3}
+# Plotting Multiple Charts and changing secondary axis to percentage
+ggplot(perf)  + 
+  geom_bar(aes(x=year, y=course),stat="identity", fill="cyan",colour="#006000")+
+  geom_line(aes(x=year, y=100*penroll),stat="identity",color="red",size=2)+
+  labs(title= "Courses vs Students Enrolled in GeeksforGeeks",
+       x="Year",y="Number of Courses Sold")+
+  scale_y_continuous(sec.axis=sec_axis(
+    ~.*0.01,name="Percentage of Students Enrolled", labels=scales::percent))
+```
+
+```{r, include=FALSE}
+rm(list=ls()) # Limpa o global environment
+```
+
+------------------------------------------------------------------------
+
+# MULTIPLE PLOTS
+
+<br>
+
+## patchwork
+
+[Assembling Plots](https://patchwork.data-imaginist.com/articles/guides/assembly.html)
+
+[Defining Layouts](https://patchwork.data-imaginist.com/articles/guides/layout.html)
+
+[Adding Annotation](https://patchwork.data-imaginist.com/articles/guides/annotation.html)
+
+[Aligning across pages](https://patchwork.data-imaginist.com/articles/guides/multipage.html)
+
+```{r fig.width = 5, fig.height = 3}
+theme_update(
+  panel.border = element_rect(fill=NA)
+)
+p1 <- ggplot(mtcars) + geom_point(aes(mpg, disp))
+p2 <- ggplot(mtcars) + geom_boxplot(aes(gear, disp, group = gear))
+
+p1 + p2
+```
+
+`patchwork` provides rich support for arbitrarily complex layouts with full alignment.
+As an example, check out this very readable code for nesting three plots on top of a third:
+
+```{r fig.width = 5, fig.height = 3}
+p3 <- ggplot(mtcars) + geom_smooth(aes(disp, qsec))
+p4 <- ggplot(mtcars) + geom_bar(aes(carb))
+
+(p1 | p2 | p3) /
+      p4
+```
+
+<br>
+
+## Facets
+
+[Facets for ggplot in R](https://www.datacamp.com/community/tutorials/facets-ggplot-r?utm_source=adwords_ppc&utm_campaignid=1455363063&utm_adgroupid=65083631748&utm_device=c&utm_keyword=&utm_matchtype=b&utm_network=g&utm_adpostion=&utm_creative=278443377086&utm_targetid=aud-392016246653:dsa-429603003980&utm_loc_interest_ms=&utm_loc_physical_ms=9100824&gclid=EAIaIQobChMIroK6r-Kh8wIVkw-RCh0s7gc5EAAYASAAEgJRDfD_BwE)
+
+[ggplot2 - Lay out panels in a grid](https://ggplot2.tidyverse.org/reference/facet_grid.html)
+
+[Setting individual axis limits with facet wrap and scales free](https://stackoverflow.com/questions/18046051/setting-individual-axis-limits-with-facet-wrap-and-scales-free-in-ggplot2)
+
+```{r fig.width = 5, fig.height = 3}
+p <- ggplot(mpg, aes(displ, cty)) + geom_point()
+
+# Use vars() to supply variables from the dataset:
+p + facet_grid(rows = vars(drv)) + theme_light()
+```
+
+<br>
+
+```{r fig.width = 5, fig.height = 3}
+p + facet_grid(cols = vars(cyl)) + theme_light()
+```
+
+<br>
+
+```{r fig.width = 5, fig.height = 3}
+p + facet_grid(drv ~ cyl) +
+  theme_light()
+```
+
+<br>
+
+```{r fig.width = 5, fig.height = 3}
+p + facet_grid(vars(drv), vars(cyl)) +
+  theme_light()
+```
+
+<br>
+
+To change plot order of facet grid, change the order of variable levels with factor()
+
+If you combine a facetted dataset with a dataset that lacks those faceting variables, the data will be repeated across the missing combinations:
+
+```{r fig.width = 5, fig.height = 3}
+df <- data.frame(displ = mean(mpg$displ), cty = mean(mpg$cty))
+p +
+  facet_grid(cols = vars(cyl)) +
+  geom_point(data = df, colour = "red", size = 2) +
+  theme_light()
+```
+
+<br>
+
+Free scales
+
+You can also choose whether the scales should be constant across all panels (the default), or whether they should be allowed to vary
+
+```{r fig.width = 5, fig.height = 3}
+ggplot(mtcars, aes(mpg, wt, colour = factor(cyl))) +
+  geom_point() +
+  facet_grid(vars(cyl), scales = "free") +
+  theme_gray()
+```
+
+<br>
+
+I would like to have the x-axis labels show up on each facet.
+How?
+[stackoverflow](https://stackoverflow.com/questions/17661052/force-x-axis-text-on-for-all-facets-of-a-facet-grid-plot)
+
+```{r include=FALSE}
+rm(list=ls()) # Limpa o global environment
+```
+
+<br>
+
+## Cowplot
+
+Cowplot provides various features that help with creating publication-quality figures, such as a set of themes, functions to align plots and arrange them into complex compound figures, and functions that make it easy to annotate plots and or mix plots with images.
+
+[Vignettes](https://wilkelab.org/cowplot/articles/index.html)
+
+[Documentation](https://wilkelab.org/cowplot/reference/index.html)
+
+<br>
+
+The cowplot package provides the function `plot_grid()` to arrange plots into a grid and label them.
+
+The `plot_grid()` is built on top of a generic drawing layer that also allows you to capture plots as images and then draw with them or on top of them.
+
+<br>
+
+------------------------------------------------------------------------
+
+# ORDERING
+
+[Reorder items to appear on your plots with FACTORS](https://r-graph-gallery.com/267-reorder-a-variable-in-ggplot2.html)
+
+<br>
+
+Reordering groups in a ggplot2 chart can be a struggle.
+This is due to the fact that ggplot2 takes into account the order of the factor levels, not the order you observe in your data frame.
+You can sort your input data frame with `sort()` or `arrange()`, it will never have any impact on your ggplot2 output.
+
+**forcats**
+
+The forcats library is a library from the tidyverse especially made to handle factors in R.
+It provides a suite of useful tools that solve common problems with factors.
+The `fct_reorder()` function allows you to reorder the factor following the value of another column.
+
+```{r fig.width = 8, fig.height = 3}
+# load the library
+library(forcats)
+
+# Reorder following the value of another column:
+p1 <- mpg |> group_by(manufacturer) |> tally(name="qtd") |> 
+  mutate(manufacturer = fct_reorder(manufacturer, qtd)) |>
+  ggplot( aes(x=manufacturer, y=qtd)) +
+    geom_bar(stat="identity", fill="#f68060", alpha=.6, width=.4) +
+    coord_flip() +
+    xlab("") +
+    theme_bw()
+ 
+# Reverse side
+p2 <- mpg |> group_by(manufacturer) |> tally(name="qtd") |> 
+  mutate(manufacturer = fct_reorder(manufacturer, desc(qtd))) |>
+  ggplot( aes(x=manufacturer, y=qtd)) +
+    geom_bar(stat="identity", fill="#f68060", alpha=.6, width=.4) +
+    coord_flip() +
+    xlab("") +
+    theme_bw()
+
+p1 + p2
+```
+
+If you have several values per level of your factor, you can specify which function to apply to aggregate and determine the order.
+The default is to use the median, but you can use the number of data points per group to make the classification:
+
+```{r fig.width = 10, fig.height = 3}
+# Using sum
+p1 <- mpg |>
+  mutate(class = fct_reorder(class, hwy, .fun='sum')) |>
+  ggplot( aes(x=reorder(class, hwy), y=hwy, fill=class)) + 
+    geom_boxplot() +
+    xlab("class") +
+    xlab("")
+ 
+# Using number of observation per group
+p2 <- mpg |>
+  mutate(class = fct_reorder(class, hwy, .fun='length' )) |>
+  ggplot( aes(x=class, y=hwy, fill=class)) + 
+    geom_boxplot() +
+    xlab("class") +
+    xlab("") +
+    xlab("")
+
+p1 + p2 & theme(legend.position="none",
+                panel.border = element_rect(fill=NA))
+```
+
+<br>
+
+Here we use the mpg data from 2008 and summarize the number of car model variants per manufacturer.
+We also adjust the manufacturer labels and order them as they should appear in the final plot.
+We want to order the bars based on their value in our visualization.
+
+`fct_lump()`, `fct_inorder()`, `fct_rev()`, and `fct_relevel()` are all from the `{forcats}` package that provides helpers for reordering factor levels.
+
+Keep in mind that we have reversed the ordering since `{ggplot2}` plots factors from bottom to top when being mapped to y.
+
+```{r echo=TRUE}
+mpg_sum <- mpg %>% 
+  dplyr::filter(year == 2008) %>%
+  
+  dplyr::mutate(
+    manufacturer = stringr::str_to_title(manufacturer),
+    #  group all manufacturers together that do not belong to the top 10
+    manufacturer = forcats::fct_lump(manufacturer, n = 9) # Lump puts n>9 em "Other"
+  ) %>% 
+  
+  # add counts (data is automatically sorted in descending order)
+  dplyr::count(manufacturer, sort = TRUE) %>%
+  
+  dplyr::mutate(
+    # first order by appearance with `fct_inorder()`
+    # reverse order so that the bar with the highest value is on top
+    manufacturer = forcats::fct_rev(forcats::fct_inorder(manufacturer)),
+    # move the category “Other” to the end (as the first level)
+    manufacturer = forcats::fct_relevel(manufacturer, "Other", after = 0)
+  ) |> 
+  arrange(manufacturer)
+
+mpg_sum
+```
+
+<br>
+
+```{r}
+ggplot(mpg_sum, aes(x = n, y = manufacturer)) +
+  geom_col(fill = "gray70") 
+```
+
+```{r, include=FALSE}
+rm(list=ls()) # Limpa o global environment
+```
+
+<br>
+
+# OTHER ELEMENTS
+
+<br>
+
+## Titles, captions
+
+Customize plot and axis titles using labs.
+
+```{r fig.width=5, fig.height=3}
+ggplot(mpg, aes(displ, hwy)) + 
+  geom_point(aes(colour = factor(cyl))) + 
+  labs(
+    x = "Engine displacement (litres)", 
+    y = "Highway miles per gallon", 
+    colour = "Number of cylinders",
+    title = "Mileage by engine size and cylinders",
+    subtitle = "Source: http://fueleconomy.gov"
+  ) + 
+  theme_light()
+```
+
+<br>
+
+Note that setting `labs(x = NULL)` removes the label and its space.
+
+The values supplied to labs() are typically text strings, with `\n` used to specify line breaks, but you can also supply mathematical expressions wrapped in quote().
+The rules by which these expressions are interpreted can be found by typing `?plotmath`.
+
+```{r fig.width = 5, fig.height = 3}
+values <- seq(from = -2, to = 2, by = .01)
+df <- data.frame(x = values, y = values ^ 3)
+ggplot(df, aes(x, y)) + 
+  geom_path() + 
+  labs(y = quote(f(x) == x^3)) +
+  theme_light()
+```
+
+<br>
+
+## Number formatting
+
+[Format numbers with scale package!](https://bookdown.org/Maxine/ggplot2-maps/posts/2019-11-27-using-scales-package-to-modify-ggplot2-scale/)
+
+The [scales package](https://www.rdocumentation.org/packages/scales) provides the internal scaling infrastructure used by ggplot2, and gives you tools to override the default breaks, labels, transformations and palettes.
+When you type `scales::label_` autocomplete will provide you with a list of labelling functions to jog your memory.
+
+[Short introduction to `scales`](https://scales.r-lib.org/)
+
+<br>
+
+## Legends
+
+<br>
+
+**Customize legend labels:** You can use the `labels` argument in a scale to customize labeling.
+You can provide a function or a character vector to the labels argument.
+
+```{r fig.width = 5, fig.height = 3}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = drv)) +
+  scale_colour_discrete(
+    labels = c("4" = "4 wheel drive",
+               "f" = "front wheel drive",
+               "r" = "rear wheel drive")
+  ) + 
+  labs(
+    title = "Custom legend labels",
+    x = "Engine Size (Liters)", 
+    y = "Fuel Efficiency (Miles per Gallon)", 
+    color = "Título da legenda" #TÍTULO DA LEGENDA ASSUME NOME DADO Á DIMENSÃO DOS ITENS DA LEGENDA
+  ) +
+  theme(legend.title = element_text(),
+        axis.title = element_text())
+```
+
+<br>
+
+**Control legend layout:** You can control how many rows or columns your legend layout will be with `guides(colour = guide_legend(nrow = 1))`
+
+<br>
+
+**Reverse legend order:** You can reverse the order of items in the legend guide without affecting the plot.
+If you want to reverse the order of the plot itself (including the legend), then check out **ORDERING** section.
+
+```{r fig.width = 8, fig.height = 3}
+p1 <- mpg |> group_by(class, year = as.factor(year)) |> 
+  tally() |> 
+  ggplot() +
+  geom_bar(aes(x=year, y=n, fill = class),stat = "identity") +
+  scale_fill_brewer(palette = "Set2") +
+  scale_y_continuous(labels = scales::number) +
+  theme_bw() +
+  labs(title="Original")
+
+p2 <- mpg |> group_by(class, year = as.factor(year)) |> 
+  tally() |> 
+  ggplot() +
+  geom_bar(aes(x=year, y=n, fill = class),stat = "identity") +
+  scale_y_continuous(labels = scales::number) +
+  # reverse legend order - can be used on any scale_fill_* or scale_color_*
+  scale_fill_brewer(palette = "Set2", guide = guide_legend(reverse = TRUE)) +
+  theme_bw() +
+  labs(title="Reverse legend order")
+
+p1 + p2
+```
+
+<br>
+
+You can create a single legend for separate geoms.
+In ggplot, legends are automatically created for mapped aesthetics.
+You can add such mappings as follows:
+
+```{r fig.width = 5, fig.height = 3}
+mpg |> 
+  group_by(manufacturer) |> 
+  summarise(hwy = mean(hwy), cty = mean(cty), .groups = "drop") |> 
+  ggplot(aes(x=manufacturer)) + 
+  # specify color for line/ fill for bar inside aes(); you can assign a label for the legend
+  geom_line(aes(y = hwy, color = "Highway"), size = 1) +
+  geom_col( aes(y = cty, fill = "City")) +
+  # then assign the desired color to the labels specified above
+  scale_color_manual(name="", values=c("Highway"="red")) +
+  scale_fill_manual(name="", values=c("City"="slategray")) +
+  labs(
+    x = "Manufacturer", 
+    y = "Fuel Efficiency (Miles per Gallon)" 
+  ) +
+  theme(axis.title = element_text())
+```
+
+<br>
+
+[All legend settings](https://www.datanovia.com/en/blog/ggplot-legend-title-position-and-labels/)
+
+```         
+# Legend title and text labels
+#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+legend.title = element_text(color, size, face), # Title font color size and face
+legend.title.align = NULL, # Title alignment. Number from 0 (left) to 1 (right)
+legend.text = element_text(color, size, face), # Text label font color size and face
+legend.text.align = NULL, # Text label alignment. Number from 0 (left) to 1 (right)
+
+# Legend position, margin and background
+#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+legend.position = "none", # Legend position: right, left, bottom, top, none
+legend.margin = margin(0.2, 0.2, 0.2, 0.2, "cm"), # Margin around each legend
+legend.background = element_rect(fill, color, size, linetype), # Legend background
+
+# Legend direction and justification
+#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+legend.direction = NULL, # Layout of items in legends ("horizontal" or "vertical")
+legend.justification = "center", # Position legend ("center" or 2-element num vector)
+
+# Background underneath legend keys
+#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+legend.key = element_rect(fill, color),  # Key background
+legend.key.size = unit(1.2, "lines"),    # key size (unit)
+legend.key.height = NULL,                # key height (unit)
+legend.key.width = NULL,                 # key width (unit)
+
+# Spacing between legends.
+#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+legend.spacing = unit(0.4, "cm"),
+legend.spacing.x = NULL,                 # Horizontal spacing
+legend.spacing.y = NULL,                 # Vertical spacing
+
+# Legend box
+#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+legend.box = NULL, # Arrangement of multiple legends ("horizontal" or "vertical")
+legend.box.margin = margin(0, 0, 0, 0, "cm"), # Margins around the full legend area
+legend.box.background = element_blank(), # Background of legend area: element_rect()
+legend.box.spacing = unit(0.4, "cm") # Space btwn the plot area and the legend box
+```
+
+<br>
+
+## Axis scales
+
+[Numeric position scales](https://ggplot2-book.org/scale-position.html#numeric-position-scales): set limits, zoom in, breaks, labels and transformations.
+
+**Zooming in**
+
+It is possible to narrow the default scale limits, but care is required: when you truncate the scale limits, some data points will fall outside the boundaries you set, and ggplot2 has to make a decision about what to do with these data points.
+The default behaviour in ggplot2 is to convert any data values outside the scale limits to `NA`.
+This means that changing the limits of a scale is not always the same as visually zooming in to a region of the plot.
+If your goal is to zoom in on part of the plot, it is usually better to use the `xlim` and `ylim` arguments of `coord_cartesian()`:
+
+```{r}
+plot <- ggplot(mpg, aes(drv, hwy)) + 
+  geom_hline(yintercept = 28, colour = "red") + 
+  geom_boxplot()
+
+p1 <- plot + labs(title = "Original")
+
+p2 <- plot + labs(title = "coord_cartesian") +
+  coord_cartesian(ylim = c(10, 35)) # works as expected
+
+p3 <- plot + labs(title = "setting limits") +
+  ylim(10, 35) # distorts the boxplot 
+
+p1 + p2 + p3
+```
+
+<br>
+
+**Breaks**
+
+Setting the locations of the axis tick marks is a common task.
+Axis tick marks and legend tick marks are both special cases of "scale breaks", and can be modified using the breaks argument to the scale function.
+
+To set breaks manually, pass a vector of data values to breaks, or set `breaks = NULL` to remove the breaks and the corresponding tick marks entirely.
+In the plot below, removing the y-axis breaks also removes the corresponding grid lines.
+
+```{r fig.width = 5, fig.height = 3}
+plot + scale_y_continuous(breaks = NULL)
+```
+
+<br>
+
+Another approach is specifying a fixed width that defines the spacing between breaks.
+The `breaks_width()` function is used for this.
+The first example below shows how to fix the width at a specific value; the second example illustrates the use of the offset argument that shifts all the breaks by a specified amount:
+
+```{r}
+p1 <- plot + scale_y_continuous(breaks = scales::breaks_width(5)) + 
+  labs(title="fixed @ 5")
+
+p2 <- plot + scale_y_continuous(breaks = scales::breaks_width(5, offset(10))) + 
+  labs(title="+ offset")
+
+p3 <- plot + scale_y_continuous(breaks = scales::breaks_width(5, offset(-10))) + 
+  labs(title="- offset")
+
+p1 + p2 + p3
+```
+
+<br>
+
+### Time Series
+
+Ex1: Sequência anual
+
+```{r fig.width = 5, fig.height = 3}
+ts.dia <- as_tibble(EuStockMarkets) |> cbind(
+  DATE = seq.Date(as.Date("1991-1-1"), by="days", length.out = 1860)
+) |> 
+  rename_with(tolower) |> 
+  pivot_longer(dax:ftse)
+
+ts.dia |> 
+  group_by(ano = make_date(year(date),1,1), name) |> 
+  summarise(value = mean(value)) |> 
+  ggplot(aes(x = ano, y = value, group = name, color = name)) +
+  geom_line() + geom_point() +
+  scale_x_date(
+    # labels = scales::label_date_short(), # formata texto de x-axis
+    labels = scales::label_date("%y"),
+    date_breaks = "1 year", # “sec", "min", "hour", "day", "week", "month", "year"
+    # expand = c(0.01,0.01), # respiro nas laterais das barras
+  ) + 
+  labs(x = "Year")
+```
+
+Sequência mensal
+
+```{r fig.width = 5, fig.height = 3}
+ts.dia |> 
+  group_by(mes = make_date(year(date),month(date),1), name) |> 
+  summarise(value = mean(value)) |> 
+  ggplot(aes(x = mes, y = value, group = name, color = name)) +
+  geom_line() + 
+  scale_x_date(
+    labels = scales::label_date_short(), # formata texto de x-axis
+    date_breaks = "6 months",
+    # breaks = seq.Date(min(ts.dia$date), max(ts.dia$date),by = "6 months")
+    expand = c(0,0), # respiro nas laterais das barras
+  ) + 
+  theme(panel.grid.major.x = element_line(linetype = "dotted")) +
+  labs(x = "Month")
+```
+
+Sequência diária
+
+```{r fig.width = 5, fig.height = 3}
+ts.dia |> 
+  ggplot(aes(x = date, y = value, group = name, color = name)) +
+  geom_line() + 
+  scale_x_date(
+    labels = scales::label_date_short(), # formata texto de x-axis
+    # date_breaks = "6 months",
+    expand = c(0,0), # respiro nas laterais das barras
+  ) + 
+  theme(panel.grid.major.x = element_line(linetype = "dotted")) 
+```
+
+```{r, include=FALSE}
+rm(list=ls()) # Limpa o global environment
+```
+
+[Scale transformations](https://ggplot2-book.org/scale-position.html#scale-transformation)
+
+[Rdocumentation on scale\_\*\_continuous()](https://www.rdocumentation.org/packages/ggplot2/versions/1.0.0/topics/scale_x_continuous)
+
+[Tidyverse documentation on scale\_\*\_continuous()](https://ggplot2.tidyverse.org/reference/scale_continuous.html)
+
+<br>
+
+To control the extra breathing space at either end of the axis:
+
+`scale_y_continuous(expand = expansion(mult = c(0, .1)))` will extend only the top end of your Y-axis by 10%
+
+`scale_y_continuous(expand = expansion(add = c(0, 5)))` will extend that end by a fixed amount of 5 units of space.
+
+To figure out how to control date scales check ou Line chart [Time series]
+
+<br>
+
+<br>
+
+## Axis labels
+
+To put axis text at a 45° angle
+
+```{r fig.width = 5, fig.height = 3}
+population |> 
+  ggplot(aes(x=year, y=population)) +
+  geom_col(fill = "slategray") +
+  scale_y_continuous(labels = scales::label_number(scale = 1/1e9), 
+                     expand = expansion(mult=c(0,0.05))) +
+  scale_x_continuous(expand = expansion(mult=c(0.01,0.01))) +
+  theme(
+    panel.border = element_rect(fill = NA),
+    axis.text.x = element_text(angle = 45, hjust = 1) # <== ANGLE ARGUMENT
+  ) 
+```
+
+<br>
+
+**Format date axis**
+
+```{r fig.width = 7, fig.height = 3}
+txhousing |> mutate(date=make_date(year,month,1)) |> 
+  filter(city %in% c("Austin", "Houston")) |> 
+  ggplot(aes(x = date, y = sales, group = city, color = city)) +
+  geom_line() + geom_point() +
+  scale_color_brewer(palette = "Dark2") +
+  scale_x_date(
+    breaks = seq(as_date("2010-01-01"), as_date("2015-01-01"), by="6 months"),
+    labels = scales::label_date_short(), # formata texto de x-axis
+    limits = c(as_date("2010-01-01"), NA),
+    # date_breaks = "3 months", # “sec", "min", "hour", "day", "week", "month", "year"
+    # labels = scales::label_date("%y"),
+    expand = c(0.01,0.01), # respiro nas laterais das barras
+  ) + 
+  theme(legend.position = "top") +
+  labs(x = "Month")
+```
+
+<br>
+
+## Data labels
+
+[geom_text() documentation](https://rdrr.io/cran/ggplot2/man/geom_text.html)\
+[geom_text() on tidyverse.org](https://ggplot2.tidyverse.org/reference/geom_text.html)\
+[What is the width argument in position_dodge()?](https://stackoverflow.com/questions/34889766/what-is-the-width-argument-in-position-dodge)
+
+<br>
+
+```{r echo=FALSE}
+df <- data.frame(
+  x = c(1, 1, 2, 2, 1.5),
+  y = c(1, 2, 1, 2, 1.5),
+  text = c("bottom-left", "bottom-right", "top-left", "top-right", "center")
+)
+```
+
+```{r fig.width=3, fig.height=3}
+ggplot(df, aes(x, y)) +
+  geom_text(aes(label = text))
+```
+
+```{r fig.width=3, fig.height=3}
+ggplot(df, aes(x, y)) +
+  geom_text(aes(label = text), vjust = "inward", hjust = "inward")
+```
+
+<br>
+
+You find several examples in `?geom_text` on how to position geom_text on dodged or stacked bars (the code chunk named `# Aligning labels and bars`).
+
+```{r echo=FALSE}
+df <- data.frame(
+  x = factor(c(1, 1, 2, 2)),
+  y = c(1, 3, 2, 1),
+  grp = c("a", "b", "a", "b")
+)
+```
+
+<br>
+
+ggplot2 doesn't know you want to give the labels the same virtual width as the bars:
+
+```{r fig.width = 5, fig.height = 3}
+ggplot(data = df, aes(x, y, group = grp)) +
+  geom_col(aes(fill = grp), position = "dodge") +
+  geom_text(aes(label = y), position = "dodge")
+```
+
+<br>
+
+So tell it:
+
+```{r fig.width = 5, fig.height = 3}
+ggplot(data = df, aes(x, y, group = grp)) +
+  geom_col(aes(fill = grp), position = "dodge") +
+  geom_text(aes(label = y), position = position_dodge(0.9))
+```
+
+<br>
+
+You can't nudge and dodge text, so instead adjust the y position
+
+```{r fig.width = 5, fig.height = 3}
+ggplot(data = df, aes(x, y, group = grp)) +
+  geom_col(aes(fill = grp), position = "dodge") +
+  geom_text(
+    aes(label = y, y = y + 0.05),
+    position = position_dodge(0.9),
+    vjust = 0
+  )
+```
+
+<br>
+
+To place text in the middle of each bar in a stacked barplot, you need to set the vjust parameter of position_stack()
+
+```{r fig.width = 5, fig.height = 3}
+ggplot(data = df, aes(x, y, group = grp)) +
+  geom_col(aes(fill = grp)) +
+  geom_text(aes(label = y), position = position_stack(vjust = 0.5))
+```
+
+<br>
+
+```{r fig.width = 5, fig.height = 3}
+p <- ggplot(mtcars, aes(wt, mpg, label = rownames(mtcars)))
+
+p + geom_text()
+
+p + geom_text(check_overlap = TRUE) # Avoid overlaps
+
+p + geom_label() # Labels with background
+
+p + geom_text(size = 10) # Change size of the label
+
+# Position data labels ==========================
+p +
+  geom_point() +
+  geom_text(hjust = 0, nudge_x = 0.05)
+p +
+  geom_point() +
+  geom_text(vjust = 0, nudge_y = 0.5)
+p +
+  geom_point() +
+  geom_text(angle = 45)
+
+
+# Add aesthetic mappings
+p + geom_text(aes(colour = factor(cyl)))
+p + geom_text(aes(colour = factor(cyl))) + scale_colour_discrete(l = 40)
+p + geom_label(aes(fill = factor(cyl)), colour = "white", fontface = "bold")
+
+p + geom_text(aes(size = wt))
+
+# Scale height of text, rather than sqrt(height)
+p +
+  geom_text(aes(size = wt)) +
+  scale_radius(range = c(3,6))
+
+# You can display expressions by setting parse = TRUE.  The
+# details of the display are described in ?plotmath, but note that
+# geom_text uses strings, not expressions.
+p +
+  geom_text(
+    aes(label = paste(wt, "^(", cyl, ")", sep = "")),
+    parse = TRUE
+  )
+```
+
+<br>
+
+## Annotations
+
+<br>
+
+[ggplot2 book](https://ggplot2-book.org/annotations.html#annotations)
+
+-   `geom_text()` and `geom_label()` to add text.
+
+-   `geom_rect()` to highlight interesting rectangular regions of the plot.
+
+[Add straight lines to a plot](http://www.sthda.com/english/wiki/ggplot2-add-straight-lines-to-a-plot-horizontal-vertical-and-regression-lines):
+
+-   `geom_line()`, `geom_path()` and `geom_segment()` to add lines.
+    Including an arrow parameter, which allows you to place an arrowhead on the line.
+
+-   `geom_vline()`, `geom_hline()` and `geom_abline()` allow you to add reference lines (sometimes called rules), that span the full range of the plot.
+
+<br>
+
+Typically, you can either put annotations in the foreground (using alpha if needed so you can still see the data), or in the background.
+With the default background, a thick white line makes a useful reference: it's easy to see but it doesn't jump out at you.
+
+```{r fig.width = 5, fig.height = 3}
+ggplot(economics, aes(date, unemploy)) + 
+  geom_line() +
+  theme_gray() +
+  labs(title = "US unemployment over time")
+```
+
+<br>
+
+One useful way to annotate this plot is to use shading to indicate which president was in power at the time.
+Use `geom_rect()` to introduce shading, `geom_vline()` to introduce separators, `geom_text()` to add labels, and then `geom_line()` to overlay the data on top of these background elements:
+
+```{r fig.width = 8, fig.height = 3}
+presidential <- subset(presidential, start > economics$date[1])
+
+ggplot(economics) + 
+  geom_rect(
+    aes(xmin = start, xmax = end, fill = party), 
+    ymin = -Inf, ymax = Inf, alpha = 0.2, 
+    data = presidential
+  ) + 
+  geom_vline(
+    aes(xintercept = as.numeric(start)), 
+    data = presidential,
+    colour = "grey50", alpha = 0.5
+  ) + 
+  geom_text(
+    aes(x = start, y = 2500, label = name), 
+    data = presidential, 
+    size = 3, vjust = 0, hjust = 0, nudge_x = 50
+  ) + 
+  geom_line(aes(date, unemploy)) + 
+  scale_fill_manual(values = c("blue", "red")) +
+  xlab("date") + 
+  ylab("unemployment")
+```
+
+```{r, include=FALSE}
+rm(list=ls()) # Limpa o global environment
+```
+
+Notice that there is little new here: for the most part, annotating plots in `ggplot2` is a straightforward manipulation of existing geoms.
+There is one special thing to note in this code: the use of `-Inf` and `Inf` as positions.
+These refer to the top and bottom (or left and right) limits of the plot.
+
+<br>
+
+This technique can be applied in other ways too.
+For instance, you can use it to add a single annotation to a plot, but it's a bit fiddly because you have to create a one row data frame:
+
+```{r fig.width = 5, fig.height = 3}
+yrng <- range(economics$unemploy)
+xrng <- range(economics$date)
+caption <- paste(strwrap("Unemployment rates in the US have 
+  varied a lot over the years", 40), collapse = "\n")
+
+ggplot(economics, aes(x=date, y=unemploy)) + 
+  geom_line() + 
+  geom_text(
+    aes(x, y, label = caption), 
+    data = data.frame(x = xrng[1], y = yrng[2], caption = caption), 
+    hjust = 0, vjust = 1, size = 4
+  ) + 
+  theme_gray()
+```
+
+```{r, include=FALSE}
+rm(list=ls()) # Limpa o global environment
+```
+
+<br>
+
+A common form of annotation is to highlight a subset of points by drawing larger points in a different colour underneath the main data set.
+To highlight vehicles manufactured by Subaru you could use this to create the basic plot:
+
+```{r}
+p <- ggplot(mpg, aes(displ, hwy)) +
+  geom_point(
+    data = filter(mpg, manufacturer == "subaru"), 
+    colour = "orange",
+    size = 3
+  ) +
+  geom_point() 
+```
+
+```{r fig.width = 5, fig.height = 3}
+p + 
+  annotate(geom = "point", x = 5.5, y = 40, colour = "orange", size = 3) + 
+  annotate(geom = "point", x = 5.5, y = 40) + 
+  annotate(geom = "text", x = 5.6, y = 40, label = "subaru", hjust = "left")
+```
+
+This approach has the advantage of creating a label inside the plot region, but the drawback is that the label is distant from the points it picks out (otherwise the orange and black dot adjacent to the label might be confused for real data).
+
+<br>
+
+`geom_curve()` and `geom_segment()` can be used to draw curves and lines connecting points with labels, and can be used in conjunction with `annotate()`:
+
+```{r fig.width = 5, fig.height = 3}
+p + 
+  annotate(
+    geom = "curve", x = 4, y = 35, xend = 2.65, yend = 27, 
+    curvature = .3, arrow = arrow(length = unit(2, "mm"))
+  ) +
+  annotate(geom = "text", x = 4.1, y = 35, label = "subaru", hjust = "left")
+```
+
+<br>
+
+The `directlabels` package, by Toby Dylan Hocking, provides a number of tools to make annotations more automated.
+See the [directlabels website](http://directlabels.r-forge.r-project.org), for other techniques.
+
+Another take on this idea comes from the [ggforce package](https://github.com/thomasp85/ggforce) by Thomas Lin Pedersen.
+The `ggforce` package contains a lot of useful tools to extend `ggplot2` functionality, including functions such as `geom_mark_ellipse()` that overlays a plot with circular "highlight" marks.
+
+**GGHIGHLIGHT**
+
+A third approach to direct labelling is provided in the [gghighlight package](https://github.com/yutannihilation/gghighlight) by Hiroaki Yutani.
+It is useful for highlighting points or lines (or indeed a variety of different geoms) within a plot, particularly for longitudinal data.
+This package is also useful when you want each facet of a plot to display data from a single group, with the complete data set plotted unobtrusively in each panel to aid visual comparison.
+
+You may want the reader to compare groups across facets.
+In the plot below it is easy to see the relationship within each facet, but the subtle differences across facets do not pop out:
+
+```{r fig.width=10, fig.height=3}
+ggplot(diamonds, aes(log10(carat), log10(price))) + 
+  geom_bin2d() + 
+  facet_wrap(vars(cut), nrow = 1) +
+  viridis::scale_fill_viridis(direction = -1, option="D")
+```
+
+<br>
+
+It is much easier to see these subtle differences if we add a reference line.
+In this plot, each facet displays the data for one category against the same regression line.
+This makes it easier to compare the facets to each other because there is shared reference line to assist the visual comparison.
+
+```{r fig.width=10, fig.height=3}
+mod_coef <- coef(lm(log10(price) ~ log10(carat), data = diamonds))
+ggplot(diamonds, aes(log10(carat), log10(price))) + 
+  geom_bin2d() + 
+  geom_abline(intercept = mod_coef[1], slope = mod_coef[2], 
+              colour = "darkgray", size = 1) + 
+  facet_wrap(vars(cut), nrow = 1) +
+  viridis::scale_fill_viridis(direction = -1, option="D")
+```
+
+```{r, include=FALSE}
+rm(list=ls()) # Limpa o global environment
+```
+
+<br>
+
+# OTHER TRICKS
+
+<br>
+
+Use parenthesis to output the plot immediately
+
+```{r fig.width=5, fig.asp=2}
+(plot <- as_tibble(USArrests, rownames = "States") |> 
+   ggplot(aes(y=fct_reorder(States, Murder, .desc = FALSE), x=Murder)) + 
+   geom_col(fill="red") +
+   labs(
+     y = "US States",
+     x = "Murders per 100.000",
+     title = "Murder Rate per US State"
+   ))
+```
+
+<br>
+
+## Switch data
+
+Minimize repetitive ggplot function by switching data.
+Instead of writing ggplot commands, again and again, use `%+%` to override the current data with the new data.
+***Warning**: For `%+%` to work, make sure the column names of the new data matches the column name of the dataset being replaced.*
+
+```{r fig.width=5, fig.asp=1.7}
+plot %+% (as_tibble(USArrests, rownames = "States")[,c(1,3)]  |> 
+            rename(Murder = Assault)) + # renames the variable for the plot
+   labs(
+     y = "US States",
+     x = "Assaults per 100.000",        # but specifies the title of the visual on the plot
+     title = "Assault Rate per US State"
+   )
+```
+
+<br>
+
+## Figure size
+
+Let's look at some ways to size a figure with RMarkdown.
+
+<br>
+
+**Define size in YAML header:** We can define the size of figures globally in the YAML part, like this for example.
+
+```         
+--- 
+title: "My Document" 
+output: html_document: 
+fig_width: 7.5 
+fig_height: 4.5 
+--- 
+```
+
+<br>
+
+**Define figure size as global chunk option**
+
+```         
+knitr::opts_chunk$set(fig.width=7.5, fig.height=4.5) 
+```
+
+<br>
+
+**Chunk options**: We can set the chunk options for each chunk .
+With `figh.height` and `fig.width` we can define the size.
+Note that the numbers default to inches as unit: `{r fig1, fig.height = 3, fig.width = 5}`.
+
+```{r fig.height=3, fig.width=5}
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(
+    data = filter(mpg, manufacturer == "subaru"), 
+    colour = "orange",
+    size = 3
+  ) +
+  geom_point() 
+```
+
+<br>
+
+For a plot of different size, simply change the numbers: `{r fig2, fig.height = 3, fig.width = 3, fig.align = "center"}`.
+
+```{r fig.height=3, fig.width=3, fig.align="center"}
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(
+    data = filter(mpg, manufacturer == "subaru"), 
+    colour = "orange",
+    size = 3
+  ) +
+  geom_point() 
+```
+
+<br>
+
+Alternatively, you may change the aspect ratio of the image (the ratio of height/width): `{r fig3, fig.width = 5, fig.asp = .62}`.
+Note that the aspect ratio is based on the `fig.width` specified.
+
+```{r fig.width = 8, fig.asp = .6}
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(
+    data = filter(mpg, manufacturer == "subaru"), 
+    colour = "orange",
+    size = 3
+  ) +
+  geom_point() 
+```
+
+<br>
+
+## Save plots
+
+`ggsave()` function allows users to save high-resolution images for publications, presentations.
+The ggsave function has features to adjust image size, define the resolution and adjusting the image background to be transparent or not, and flexibility to choose different file extensions.
+
+```         
+ggsave(
+  filename = "trial.png",
+  device = png(),
+  path = "plots/",
+  scale = 1,
+  width = 5,
+  height = 8,
+  units = "in",
+  dpi = 600,
+  limitsize = TRUE,
+  bg = "transparent"
+)
+```
+
+<br>
+
+## Suppress warnings
+
+You need to `suppressWarnings()` around the `print()` call, not the creation of the `ggplot()` object:
+
+```         
+> suppressWarnings(print(
++ ggplot(mydf, aes(x = species)) + 
++    stat_bin() + 
++    geom_text(data = labs, aes(x = species, y = value, 
++                               label = value, vjust = -0.5)) +
++    facet_wrap(~ lvl)))
+>
+```
+
+The reason for the behaviour is that the warnings are only generated when the plot is actually drawn, not when the object representing the plot is created.
+R will auto print during interactive usage, so whilst `suppressWarnings(plt)` doesn't work because, in effect, you are calling `print(suppressWarnings(plt))`, whereas `suppressWarnings(print(plt))` does work because `suppressWarnings()` can capture the warnings arising from the `print()` call.
+
+It might be easier to assign the final plot to an object and then `print()`.
