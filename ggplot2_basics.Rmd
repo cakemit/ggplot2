@@ -11,7 +11,8 @@ output:
 [GGPLOT2 - Elegant Graphics for Data Analysis](https://ggplot2-book.org/index.html) by Hadley Wickham, Danielle Navarro, and Thomas Lin Pedersen
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set( echo=TRUE, message=FALSE, warning=FALSE, fig.width = 5, fig.height = 3 )
+knitr::opts_chunk$set( echo=TRUE, fig.width = 5, fig.height = 3 )
+options(scipen=999) # "Desliga" notação científica. Para "ligar" use scipen=0
 
 library(tidyverse)
 library(patchwork)
@@ -424,14 +425,14 @@ rm(list=ls())
 
 # BASIC PLOTS
 
-## Scatter chart
+## Scatter plot
 
-```{r fig.width = 5, fig.height = 3}
+```{r}
 ggplot(data = mpg) + # layer1 => data
   geom_point(        # layer2 => geom (points)
     mapping = aes(x = displ, y = hwy) # mapping => how variables map to visuals
   ) +
-  theme_classic()
+  labs(title="Simple scatter plot")
 ```
 
 <br>
@@ -441,15 +442,13 @@ The fittings are more informative giving an overview of the trends and the corre
 We added a linear fit to the data that shows a positive trend in the rise in temperature over the years.
 By adding all these features to the above scatter plot, we made it more self-explanatory.
 
-```{r fig.width = 5, fig.height = 3}
-### scatter plot with linear fit
+```{r message=FALSE}
 mpg |>  ggplot(aes(displ, hwy)) +
   geom_smooth(method = "lm", se = FALSE,            # linear fit to the data point
-              color = "blue", size = 1.5) +         # tuning line color and thickness
+              color = "blue", size = 1) +           # tuning line color and thickness
   geom_point(alpha = 0.5, size = 2) +               # tuning the transparency and size of data points
-  # scale_x_continuous(breaks=seq(1960,2020,5)) +   # breaking x-axis ticks in intervals of 10
   labs(x = "Displ", y = "Highway consumption",      # adding titles to the axis
-       title = "Title goes here",                   # adding title to the plot
+       title = "Scatter plot with linear fit",      # adding title to the plot
        subtitle = "Subtitle goes here",             # adding subtitles to the plot
        caption = "Source: goes here")               # adding caption to the plot
 
@@ -465,24 +464,26 @@ Below we can see three plots, one on the left uses the default `geom_smooth()` f
 ```{r fig.width=10, fig.height=4}
 ### default smooth fit
 p2 <- mpg |> ggplot(aes(displ, hwy)) + 
-  geom_smooth(stat = "smooth", color = "blue", size = 1.5) +
+  geom_smooth(stat = "smooth", color = "blue", size = 1) +
   geom_point() +
-  labs(x = "Highway consumption", y = "Avg. Temperature (°C)")
+  labs(x = "Highway consumption", y = "Avg. Temperature (°C)",
+       title = "Smooth fit (default)")
 
 ### linear fit
 p3 <- mpg |> ggplot(aes(displ, hwy)) + 
   geom_smooth(method = "lm", se = FALSE,
-              color = "blue", size = 1.5) +
+              color = "blue", size = 1) +
   geom_point() +
-  labs(x = "Highway consumption", y = "Avg. Temperature (°C)")
+  labs(x = "Highway consumption", y = "Avg. Temperature (°C)",
+       title = "Linear fit")
 
 ### user defined formula for fitting
 p4 <- mpg |> ggplot(aes(displ, hwy)) + 
-  geom_smooth(method = "lm", 
-              formula = y~x+I(x^2)+I(x^3),        # user defined function
-              color = "blue", size = 1.5) +
+  geom_smooth(method = "lm", formula = y~x+I(x^2)+I(x^3),        
+              color = "blue", size = 1) +
   geom_point() +
-  labs(x = "Highway consumption", y = "Avg. Temperature (°C)")
+  labs(x = "Highway consumption", y = "Avg. Temperature (°C)",
+       title = "User defined function for fitting")
 
 p2 + p3 + p4
 ```
@@ -499,19 +500,35 @@ rm(list=ls()) # Limpa o global environment
 
 [Article 1](https://towardsdatascience.com/how-to-make-stunning-line-charts-in-r-a-complete-guide-with-ggplot2-91e5a607ea46)
 
-```{r echo=FALSE}
-data <- tibble(
-  quarter=c("Q1", "Q1", "Q2", "Q2", "Q3", "Q3", "Q4", "Q4"),
-  product=c("A", "B", "A", "B", "A", "B", "A", "B"),
-  profit=c(10, 14, 12, 11, 13, 15, 16, 18)
-)
+
+
+```{r}
+(data <- world_bank_pop |> 
+   filter(indicator %in% c("SP.POP.TOTL", "SP.URB.TOTL")) |> 
+   pivot_longer(3:20, names_to="year", names_transform=as.integer, values_to="pop") |> 
+   pivot_wider(names_from=indicator, values_from=pop, values_fill=0) |> 
+   mutate(Rural = SP.POP.TOTL - SP.URB.TOTL) |> select(-SP.POP.TOTL) |> 
+   pivot_longer(c(SP.URB.TOTL,Rural), names_to="type", values_to="pop", values_drop_na=T) |> 
+   mutate(type = ifelse(type=="Rural", type, "Urban")) |> 
+   summarise(pop = round(sum(pop)/1e9), .by=c(year, type)))
 ```
+
 
 <br>
 
 **Simple line chart**
 
 <br>
+
+```{r}
+data |> summarise(pop=sum(pop), .by=year) |> 
+  ggplot(aes(x=year, y=pop, group=1)) +
+  geom_line() + geom_point() +
+  scale_y_continuous(labels=scales::label_number()) +
+  labs(title = "Simple line chart", x="Year", y=NULL,
+       subtitle="Population (billions)")
+```
+
 
 **Multiple lines**
 
@@ -520,21 +537,18 @@ In this case, we want them to be grouped by sex.
 
 PLOT Multiple lines by color Planos
 
-```{r fig.width = 5, fig.height = 3}
+```{r fig.asp=.8}
 data |> 
-  ggplot(aes(x=quarter, y=profit, group = product)) +
-  geom_line(aes(color = product), size = 1) + 
-  scale_color_brewer(palette = "Dark2") +
-  # Escala dos axis
-  scale_y_continuous(expand = c(0,0), limits = c(0,NA)) +
-  scale_x_discrete(expand = c(0,0)) +
+  ggplot(aes(x=year, y=pop, group=type, color=type)) +
+  geom_line(size = 1) + geom_point() +
+  scale_color_brewer(palette="Dark2") +
   # Texto: Títulos e notas
   labs(
-    title = "Quarterly Profit (in million U.S. dollars)",
-    subtitle = "A simple line chart",
-    caption = "Source: ImaginaryCo",
-    x = "Quarter of 2020",
-    y = "Profit in 2020"
+    title = "Line chart by category",
+    subtitle = "Population by type of location",
+    caption = "Source: Tidyverse datasets",
+    x = "Year",
+    y = "Population (billions)"
   ) +
   theme(
     panel.border = element_rect(fill = NA),
@@ -544,14 +558,13 @@ data |>
 
 <br>
 
-*Too many lines! Need gradient colors*
+*Too many lines! Need a continuous scale of gradient colors!*
 
-I have data with about 100 ordered categories.
-I would like to plot each category as a line separately, with the line colors ranging from a low value (say, blue) to a high value (say, red).
+I have data with about 100 ordered categories. I would like to plot each category as a line separately, with the line colors ranging from a low value (say, blue) to a high value (say, red).
 
 Since a discrete legend is useless anyway, you could use a continuous color scale:
 
-```{r fig.width = 5, fig.height = 3}
+```{r fig.asp=.8}
 df <- data.frame(expand.grid(1:100, seq(0, 1, by = .1)))
 names(df) <- c("category", "X")
 df <- within(df, {
@@ -559,60 +572,58 @@ df <- within(df, {
   category <- factor(1:100)
   })
 
-ggplot(data = df, aes(x = X, y = Y, color = as.integer(category), group = category)) +
+ggplot(data = df, aes(x=X, y=Y, color=as.integer(category), group=category)) +
   geom_line() +
-  scale_colour_gradient(name = "category", 
-                        low = "blue", high = "red")
+  scale_colour_gradient(
+    name="category", low="blue", high="red",
+    # Manipulate the labels names on the legend:
+    breaks=c(1,50,100), labels=c('Low','Mid','High'), 
+  ) +
+  labs(title = "Line chart with too many categories",
+       subtitle = "Uses a continuous scale of gradient colors")
 ```
 
-<br>
-
-And you can change the label names on the legend:
-
-```{r fig.width = 5, fig.height = 3}
-ggplot(data = df, aes(x = X, y = Y, color = as.integer(category), group = category)) +
-  geom_line() +
-  scale_colour_gradient(name = "category", 
-                        breaks = c(1,50,100), labels = c('Low','Mid','High'),
-                        low = "blue", high = "red")
+```{r include=FALSE}
+rm(list=ls())
 ```
+
+
 
 <br>
 
 ## Bar chart
 
-[cookbook-r](http://www.cookbook-r.com/Graphs/Bar_and_line_graphs_(ggplot2)/)\
-[article](https://towardsdatascience.com/how-to-make-stunning-bar-charts-in-r-a-complete-guide-with-ggplot2-c8f3b87de4d1)
+[cookbook-r](http://www.cookbook-r.com/Graphs/Bar_and_line_graphs_(ggplot2)/)\   
+[article](https://towardsdatascience.com/how-to-make-stunning-bar-charts-in-r-a-complete-guide-with-ggplot2-c8f3b87de4d1)     
 
-```{r fig.width = 5, fig.height = 4}
-data |> group_by(quarter) |> 
-  summarise(profit = sum(profit), .groups = "drop") |> 
-  ggplot(aes(x=quarter, y=profit)) +
-  # geom_col() == geom_bar(stat = "identity")
-  # geom_col() + # default = stacked bars
-  geom_bar(stat = 'identity', fill = "lightblue") + 
-  geom_text(aes(label=profit), vjust = -0.5, size = 4) +
-  scale_y_continuous(expand = c(0,2))
+Note you can adjust the width of the bar. The default width between bars is 0.9. The closer the width is to 1, the closer together the bars will be. The closer the width is to 0, the more spread out the bars will be.
+
+
+```{r}
+(data <- midwest |> summarise(across(popwhite:popother, sum), .by=state) |> 
+  pivot_longer(popwhite:popother, values_to="pop", names_to="race") |> 
+  mutate(race = str_sub(race, 4,-1),
+         race = if_else(race %in% c("white"), race, "other"),
+         race = factor(race, levels=c("other","white"))) |> 
+  summarise(pop = sum(pop), .by=c(state, race)))
 ```
 
 
-You can adjust the width of the bar. The default width between bars is 0.9. The closer the width is to 1, the closer together the bars will be. The close the width is to 0, the more spread out the bars will be.
-
+```{r}
+data |> summarise(pop = sum(pop), .by=state) |> 
+  ggplot(aes(x=state, y=pop)) +
+  # geom_col() == geom_bar(stat = "identity") # default = stacked bars
+  # geom_bar(stat = 'identity', fill = "lightblue") + 
+  geom_col(
+    fill="cadetblue", 
+    width=.6             # control the width of the columns
+  ) +
+  geom_text(aes(label=scales::number(pop, scale=1/1e6, accuracy=.1)), 
+            vjust = -0.5, size = 4) +
+  scale_y_continuous(expand = expansion(mult=c(0,.2)), breaks=NULL) +
+  theme(panel.grid.major.x=element_blank()) +
+  labs(title="Simple bar chart", y=NULL, subtitle="US Midwest population (millions)")
 ```
-ggplot(df, aes(x=x_variable)) +
-  geom_bar(width=.4)
-```
-
-
-Adjust Spacing Between Bars in Clustered Bar Chart: The width value controls the spacing between clusters while the position_dodge() value controls the spacing between bars within the same cluster.
-
-```         
-ggplot(df, aes(x=x_variable, y=y_variable, fill=fill_variable)) +
-  geom_bar(width=.5, stat='identity', position=position_dodge(.7))
-```
-
-Or you can set space between bars: As of ggplot 3.0.0, you can use position_dodge2.
-It takes a padding argument that adds space in between the bars.
 
 
 <br>
@@ -621,78 +632,84 @@ It takes a padding argument that adds space in between the bars.
 
 [stacked](https://ggplot2.tidyverse.org/reference/position_stack.html)
 
-The ggplot2 package uses stacked bar charts by default.
-Stacked bar charts are best used when all portions are colored differently.
 
-To change the coloring, you only need to change the fill value in the data layer.
-Here's an example:
+The ggplot2 package uses stacked bar charts by default.
 
 ```{r fig.height=4, fig.width=10}
-p1 <- data |> 
-  ggplot(aes(x=quarter, y=profit, fill = product)) +
+p1 <- data |> mutate(pop = pop/1e3) |> 
+  ggplot(aes(x=state, y=pop, fill=race)) +
   geom_col(color = "white") + # default position = "stack"
   scale_fill_brewer(palette = "Dark2") +
   # Label the groups
-  geom_text(aes(label=profit),
+  geom_text(aes(label=scales::number(pop, accuracy=1)),
             position = position_stack(vjust = 0.5), 
+            check_overlap=T,
             color = "black", size = 4) +
   # Label the total on top of the bars
-  geom_text(aes(label=scales::number(after_stat(y)),
-                group = quarter),
+  geom_text(aes(label=scales::number(after_stat(y), accuracy=1), group=state),
             stat = "summary", fun = sum, vjust=-1, 
             fontface = "bold") +
   # Create a little breathing space on top of the chart:
-  scale_y_continuous(expand = expansion(mult = c(0,0.1))) +
-  labs(title = "Stacked")
+  scale_y_continuous(expand = expansion(mult = c(0,0.1)), 
+                     labels=scales::label_number()) +
+  labs(title = "Stacked", y="Population (000s)")
+
 
 p2 <- data |> 
-  mutate(pct = profit/sum(profit), .by = quarter) |> 
-  ggplot(aes(x=quarter, y=pct, fill = product)) +
+  mutate(pct = pop/sum(pop), .by=state) |> 
+  ggplot(aes(x=state, y=pct, fill=race)) +
   geom_col(color = "white") +
-  geom_text(aes(label=scales::percent(pct, accuracy = 1), group=product), 
-            position = position_fill(.5)) +
+  geom_text(aes(label=scales::percent(pct, accuracy = 1), group=race), 
+            position = position_fill(.5), check_overlap=T) +
   scale_fill_brewer(palette = "Dark2") +
-  scale_y_continuous(labels = NULL, expand = expansion(mult = c(0,0))) +
-  labs(title = "Stacked to 100%")
+  scale_y_continuous(breaks=NULL, expand = expansion(mult = c(0,0))) +
+  labs(title = "Stacked to 100%", y=NULL)
 
-p1 + p2
+p1 + p2 + plot_layout(guides = 'collect')
 ```
 
 <br>
 
-Here's a general solution, that adds a "position" column to the dataframe, to use with geom_text() and place the labels exactly where they belong:
+Here's a solution that adds a "position" column to the df, to use with `geom_text()` and place the labels exactly where they belong:
 
-```{r fig.width = 5, fig.height = 3}
-mpg |> group_by(class, year = as.factor(year)) |> 
-  tally() |> 
-  ungroup() |>
+```{r fig.asp=.8}
+mpg |> group_by(class, year=as.factor(year)) |> tally() |> ungroup() |>
   arrange(desc(class)) |> 
-  group_by(year) |> 
-  mutate(pos = cumsum(n) - n/2) |> # create "position" column as 1/2 the y-axis variable
+  mutate(pos = cumsum(n) - n/2, .by=year) |> # create "position" column as 1/2 the y-axis variable
   ggplot() +
-  geom_bar(aes(x=year, y=n, fill = class),stat = "identity") +
+  geom_col(aes(x=year, y=n, fill=class), width=.7, color="white") +
   geom_text(aes(x=year, 
                 y=pos, # use "position" column
-                label = prettyNum(n,big.mark = ".", decimal.mark = ",")), 
-            vjust = 0,  size = 2) +
-  scale_fill_brewer(palette = "Set2") +
-  scale_y_continuous(labels = scales::comma) +
-  theme_bw() +
-  labs(title="Place data labels in the middle manually")
+                label=prettyNum(n, big.mark = ".", decimal.mark = ",")), 
+            vjust=0, size=4, check_overlap=T) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_y_continuous(expand=c(0,0), breaks=NULL) +
+  labs(title="Place data labels in the middle manually",
+       y=NULL, x=NULL)
 ```
 
 <br>
 
 ### Grouped bar
 
-```{r fig.width = 5, fig.height = 4}
-data |> 
-  ggplot(aes(x = quarter, y = profit, fill = product)) +
-  geom_col(position = position_dodge()) +
+
+Adjust Spacing Between Bars: The `padding` argument of `position_dodge2()` controls the spacing between bars within the same cluster.
+
+
+```{r}
+data |> mutate(pop = pop/1e3) |> 
+  ggplot(aes(x=state, y=pop, fill=race)) +
+  geom_col(position=position_dodge2(padding=.05)) +
+  geom_text(aes(label=scales::number(pop, accuracy=1)), 
+            position = position_dodge(0.9), 
+            vjust=-0.5, size=3) +
+  scale_y_continuous(expand=expansion(mult=c(0,.1)), labels=scales::label_number()) +
   scale_fill_brewer(palette = "Dark2") +
-  geom_text(aes(label=profit), 
-            position = position_dodge(0.9), vjust = -0.5, size = 4)
+  theme(panel.grid.major.x=element_blank(),
+        legend.position="top") +
+  labs(title="Grouped or Clustered bar chart", y=NULL)
 ```
+
 
 <br>
 
@@ -701,27 +718,27 @@ data |>
 **Horizontal bar charts** are useful when there are many categories on the x-axis or when their names are long.
 The `coord_flip()` is used to turn any vertical bar chart into a horizontal one:
 
-```{r fig.height=4, fig.width=10}
-p1 <- data |> 
-  group_by(quarter) |> 
-  summarise(profit = sum(profit), .groups = "drop") |> 
-  ggplot(aes(x=quarter, y=profit)) +
-  geom_col(fill = "lightblue") +
-  geom_text(aes(label = profit), hjust = -0.5, size = 4) + 
-  scale_y_continuous(expand = c(0,2.5)) +
-  coord_flip() 
+```{r fig.height=6, fig.width=10}
+p1 <- mpg |> 
+  summarise(hwy = mean(hwy), .by=manufacturer) |> 
+  ggplot(aes(x=manufacturer, y=hwy)) +
+  geom_col(fill = "cadetblue") +
+  geom_text(aes(label=scales::number(hwy,accuracy=1)), hjust = -0.5, size = 3) + 
+  scale_y_continuous(expand=expansion(mult=c(0,.2))) +
+  labs(title="Simple horizontal bar chart") +
+  coord_flip()  # <- FLIP AXES
 
-p2 <- data |> 
-  ggplot(aes(x=quarter, y=profit, 
-             fill = product)) + # defines global fill to group everywhere by product
-  geom_col(position = position_dodge()) + 
-  geom_text(aes(label = profit), 
-            position = position_dodge(0.9), hjust = -0.5, size = 4) +
-  scale_fill_npg() +
-  scale_y_continuous(expand = c(0,1.5)) +
+p2 <- mpg |> 
+  summarise(hwy = mean(hwy), .by=c(manufacturer, class)) |> 
+  ggplot(aes(x=manufacturer, y=hwy, 
+             fill = class)) + # defines global fill to group everywhere by product
+  geom_col(position = position_dodge(), color="white") + 
+  scale_fill_brewer(palette="Dark2") +
+  scale_y_continuous(expand=expansion(mult=c(0,.1))) +
+  labs(title = "Grouped horizontal bar chart") +
   coord_flip()
 
-p1 + p2
+p1 + p2 + plot_annotation(title = "Horizontal bar charts")
 ```
 
 <br>
@@ -729,13 +746,30 @@ p1 + p2
 ## Area chart
 
 Stacking is also the default behaviour for most area plots.
-Stacking is also useful for time series.
+Stacking area charts are also useful for time series.
+
+```{r}
+(data <- world_bank_pop |> 
+   filter(indicator %in% c("SP.POP.TOTL", "SP.URB.TOTL")) |> 
+   pivot_longer(3:20, names_to="year", names_transform=as.integer, values_to="pop") |> 
+   pivot_wider(names_from=indicator, values_from=pop, values_fill=0) |> 
+   mutate(Rural = SP.POP.TOTL - SP.URB.TOTL) |> select(-SP.POP.TOTL) |> 
+   pivot_longer(c(SP.URB.TOTL,Rural), names_to="type", values_to="pop", values_drop_na=T) |> 
+   mutate(type = ifelse(type=="Rural", type, "Urban")) |> 
+   summarise(pop = round(sum(pop)/1e9), .by=c(year, type)))
+```
+
 
 <br>
 
-```{r fig.width = 5, fig.height = 3}
-ggplot(data, aes(x = quarter, y = profit, fill=product, group=product)) +
-  geom_area() 
+```{r}
+data |> 
+  ggplot(aes(x=year, y=pop, fill=type, group=type)) +
+  geom_area(color="white") +
+  scale_fill_lancet() +
+  scale_y_continuous(expand=expansion(mult=c(0,.1))) +
+  scale_x_continuous(expand=c(0,0)) +
+  labs(title="Simple area chart", x=NULL)
 ```
 
 ```{r, include=FALSE}
@@ -748,97 +782,32 @@ rm(list=ls()) # Limpa o global environment
 
 <br>
 
-**COWPLOT**
-
-[Cowplot vignettes](https://wilkelab.org/cowplot/articles/index.html)
-
-Let's make two separate plots and then draw them on top of each other.
-First, let's draw a bar plot of the number of cars in different classes in the mpg dataset.
-
-```{r  fig.width = 5, fig.height = 3}
-city_mpg <- mpg |>
-  mutate(class = fct_lump(class, 4, other_level = "other")) |>
-  group_by(class) |>
-  summarize(
-    mean_mpg = mean(cty),
-    count = n()
-  ) |> mutate(
-    class = fct_reorder(class, count)
-  ) |>
-  mutate(class = fct_reorder(class, -mean_mpg))
-
-p1 <- ggplot(city_mpg, aes(class, count)) +
-  geom_col(fill = "#6297E770") + 
-  scale_y_continuous(
-    expand = expansion(mult = c(0, 0.05)),
-    position = "right"
-  ) +
-  theme_minimal_hgrid(11, rel_small = 1) + # cowplot theme
-  theme(
-    panel.grid.major = element_line(color = "#6297E770"),
-    axis.line.x = element_blank(),
-    axis.text.x = element_blank(),
-    axis.title.x = element_blank(),
-    axis.ticks = element_blank(),
-    axis.ticks.length = grid::unit(0, "pt"),
-    axis.text.y = element_text(color = "#6297E7"),
-    axis.title.y = element_text(color = "#6297E7")
-  )
-
-p2 <- ggplot(city_mpg, aes(class, mean_mpg)) + 
-  geom_point(size = 3, color = "#D5442D") + 
-  scale_y_continuous(limits = c(10, 21)) +
-  theme_half_open(11, rel_small = 1) + # cowplot theme
-  theme(
-    axis.ticks.y = element_line(color = "#BB2D05"),
-    axis.text.y = element_text(color = "#BB2D05"),
-    axis.title.y = element_text(color = "#BB2D05"),
-    axis.line.y = element_line(color = "#BB2D05")
-  )
-
-# The resulting plot has dual axes. Plot alignment and plot placement are separated.
-aligned_plots <- align_plots(p1, p2, align="hv", axis="tblr")
-ggdraw(aligned_plots[[1]]) + draw_plot(aligned_plots[[2]])
-```
-
-```{r, include=FALSE}
-rm(list=ls()) # Limpa o global environment
-```
-
-<br>
-
-**GGPLOT**
-
 [R Graph Gallery - Dual Y axis](https://r-graph-gallery.com/line-chart-dual-Y-axis-ggplot2.html)
 
 Combine bar and line chart
 
 Sometimes while dealing with hierarchical data we need to combine two or more various chart types into a single chart for better visualization and analysis.
 
-Dataset in use: Courses Sold vs Students Enrolled
 
-Year Courses Sold Percentage Of Students Enrolled 2014 35 30% 2015 30 25% 2016 40 30% 2017 25 50% 2018 30 40% 2019 35 20% 2020 65 60%
+```{r}
+data <- data.frame(
+  year = c(2014, 2015, 2016, 2017, 2018, 2019,2020),
+  course = c(35, 30, 40, 25, 30, 35, 65),
+  pct_enroll = c(0.3, 0.25, 0.3, 0.5, 0.4, 0.2, 0.6)
+)
 
-```{r fig.width = 5, fig.height = 3}
-year <- c(2014, 2015, 2016, 2017, 2018, 2019,2020)
-course <- c(35, 30, 40, 25, 30, 35, 65)
-penroll <- c(0.3, 0.25, 0.3, 0.5, 0.4, 0.2, 0.6)
-  
-perf <- data.frame(year, course, penroll)
-
-ggplot(perf)  + 
-  geom_bar(aes(x=year, y=course),stat="identity", fill="cyan",colour="#006000")+
-  geom_line(aes(x=year, y=penroll),stat="identity",color="red")+
-  labs(title= "Courses vs Students Enrolled in GeeksforGeeks",
-       x="Year",y="Number of Courses Sold")
+data |> ggplot(aes(x=as.factor(year))) + 
+  geom_col(aes(y=course), fill="cadetblue")+
+  geom_line(aes(y=pct_enroll, group=1), color="red")+
+  scale_y_continuous(expand=expansion(mult=c(0,.1))) +
+  labs(title= "Combo bar + line chart on the same axis?",
+       x=NULL, y=NULL,
+       subtitle="Number of Courses Sold and % enrolled")
 ```
 
-In the above plot, we can observe that the bar plot is in proper shape as expected, but the line plot is merely visible.
-It happens due to the scaling factor since the line plot is for the percentage of students which is in decimal and the current vertical axis having very large values.
 So, we need a secondary axis in order to fit the line properly in the same chart area.
 
-As scaling comes into the picture, we have to use the R function scale_y_continuous( ) which comes in the ggplot2 package.
-Also, another function sec_axis( ) is used to add a secondary axis and assign the specifications to it.
+As scaling comes into the picture, we have to use the R function `scale_y_continuous( )`. Also, another function `sec_axis( )` is used to add a secondary axis and assign the specifications to it.\
 
 Syntax:
 
@@ -846,65 +815,98 @@ Syntax:
 
 Parameters :
 
-trans : A formula or function needed to transform.
+trans : A formula or function needed to transform.\
 name : The name of the secondary axis.
-Since we are dealing with a secondary Y-axis, so we need to write the command inside scale_y_continuous( ).
+
+Since we are dealing with a secondary Y-axis, so we need to write the command inside `scale_y_continuous( )`.
 
 Syntax:
 
 `scale_y_continuous(name,labels,position,sec.axis,limits,breaks)`
 
-The scaling factor is the trickiest part to handle while dealing with a secondary axis.
-Since the secondary axis needs to be in percentage we have to use the scale factor of 0.01 and write the formula of conversion in the trans argument of sec_axis( ).
-And you are scaling with 0.01 in the formula, you also have to multiply the same axis with 100 in the geom_line( ) in order to make balance in scaling.
+The scaling factor is the trickiest part to handle while dealing with a secondary axis. Since the secondary axis needs to be in percentage we have to use the scale factor of 0.01 and write the formula of conversion in the trans argument of `sec_axis()`. And since you are scaling with 0.01 in the formula, you also have to multiply the same axis with 100 in the `geom_line()` in order to make balance in scaling.
 
-```{r fig.width = 5, fig.height = 3}
-# Plotting Charts and adding a secondary axis
-ggplot(perf)  + 
-  geom_bar(aes(x=year, y=course),stat="identity", fill="cyan",colour="#006000")+
-  geom_line(aes(x=year, y=100*penroll),stat="identity",color="red",size=2)+
-  labs(title= "Courses vs Students Enrolled in GeeksforGeeks",
-       x="Year",y="Number of Courses Sold")+
-  scale_y_continuous(sec.axis=sec_axis(~.*0.01,name="Percentage"))
+```{r}
+data |> ggplot(aes(x=as.factor(year)))  + 
+  geom_col(aes(y=course), fill="cadetblue")+
+  geom_line(aes(y=100*pct_enroll, group=1), color="red", size=1) +
+  geom_point(aes(y=100*pct_enroll), color="red") +
+  scale_y_continuous(
+    expand=expansion(mult=c(0,.1)),
+    sec.axis=sec_axis(~.*0.01, name="Percent enrolled", labels=scales::percent)
+  ) +
+  theme(panel.grid.major.x=element_blank()) +
+  labs(title= "Combo bar + line chart on the same axis!",
+       x=NULL, y="Number of Courses")
 ```
+
+The secondary axis added is a fraction of the original axis value.
+
+
+```{r, include=FALSE}
+rm(list=ls()) # Limpa o global environment
+```
+
 
 <br>
 
-The secondary axis added will be in the form of fractional value as we can see above.
-But we need the secondary axis in percentage.
-In order to convert to percentage, we have to use the arguments labels inside the sec_axis( ).
+**Alternative: COWPLOT**
 
-Some important keywords used are :
+[Cowplot vignettes](https://wilkelab.org/cowplot/articles/index.html)
 
-scale: It is used for scaling the data.
-A scaling factor is multiplied by the original data value.
-labels: It is used to assign labels.
+Let's make two separate plots and then draw them on top of each other.
+First, let's draw a bar plot of the number of cars in different classes in the mpg dataset.
 
-The function used is scale_y_continuous( ) which is a default scale in "y-aesthetics" in the library ggplot2.
-Since we need to add "percentage" in the labels of the Y-axis, the keyword "labels" is used.
-
-Now use below the command to convert the y-axis labels into percentages.
-
-scales : : percent
-
-This will simply scale the y-axis data from decimal to percentage.
-It multiplies the present value by 100.
-The scaling factor is 100.
-
-```{r fig.width = 5, fig.height = 3}
-# Plotting Multiple Charts and changing secondary axis to percentage
-ggplot(perf)  + 
-  geom_bar(aes(x=year, y=course),stat="identity", fill="cyan",colour="#006000")+
-  geom_line(aes(x=year, y=100*penroll),stat="identity",color="red",size=2)+
-  labs(title= "Courses vs Students Enrolled in GeeksforGeeks",
-       x="Year",y="Number of Courses Sold")+
-  scale_y_continuous(sec.axis=sec_axis(
-    ~.*0.01,name="Percentage of Students Enrolled", labels=scales::percent))
+```{r  fig.width = 5, fig.height = 3}
+# city_mpg <- mpg |>
+#   mutate(class = fct_lump(class, 4, other_level = "other")) |>
+#   group_by(class) |>
+#   summarize(
+#     mean_mpg = mean(cty),
+#     count = n()
+#   ) |> mutate(
+#     class = fct_reorder(class, count)
+#   ) |>
+#   mutate(class = fct_reorder(class, -mean_mpg))
+# 
+# p1 <- ggplot(city_mpg, aes(class, count)) +
+#   geom_col(fill = "#6297E770") + 
+#   scale_y_continuous(
+#     expand = expansion(mult = c(0, 0.05)),
+#     position = "right"
+#   ) +
+#   theme_minimal_hgrid(11, rel_small = 1) + # cowplot theme
+#   theme(
+#     panel.grid.major = element_line(color = "#6297E770"),
+#     axis.line.x = element_blank(),
+#     axis.text.x = element_blank(),
+#     axis.title.x = element_blank(),
+#     axis.ticks = element_blank(),
+#     axis.ticks.length = grid::unit(0, "pt"),
+#     axis.text.y = element_text(color = "#6297E7"),
+#     axis.title.y = element_text(color = "#6297E7")
+#   )
+# 
+# p2 <- ggplot(city_mpg, aes(class, mean_mpg)) + 
+#   geom_point(size = 3, color = "#D5442D") + 
+#   scale_y_continuous(limits = c(10, 21)) +
+#   theme_half_open(11, rel_small = 1) + # cowplot theme
+#   theme(
+#     axis.ticks.y = element_line(color = "#BB2D05"),
+#     axis.text.y = element_text(color = "#BB2D05"),
+#     axis.title.y = element_text(color = "#BB2D05"),
+#     axis.line.y = element_line(color = "#BB2D05")
+#   )
+# 
+# # The resulting plot has dual axes. Plot alignment and plot placement are separated.
+# aligned_plots <- align_plots(p1, p2, align="hv", axis="tblr")
+# ggdraw(aligned_plots[[1]]) + draw_plot(aligned_plots[[2]])
 ```
 
 ```{r, include=FALSE}
 rm(list=ls()) # Limpa o global environment
 ```
+
 
 ------------------------------------------------------------------------
 
