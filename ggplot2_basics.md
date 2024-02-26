@@ -10,13 +10,7 @@ output:
 
 [GGPLOT2 - Elegant Graphics for Data Analysis](https://ggplot2-book.org/index.html) by Hadley Wickham, Danielle Navarro, and Thomas Lin Pedersen
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set( echo=TRUE, fig.width = 5, fig.height = 3 )
-options(scipen=999) # "Desliga" notação científica. Para "ligar" use scipen=0
 
-library(tidyverse)
-library(patchwork)
-```
 
 
 <br>
@@ -42,7 +36,8 @@ data(package = .packages(all.available = TRUE))
 
 My favorite custom theme:
 
-```{r}
+
+```r
 theme_set(theme_light())
 theme_update(
   panel.grid.minor = element_blank(),
@@ -84,8 +79,20 @@ theme_classic()
 
 You can also list settings of a specific element of the plot theme.
 
-```{r}
+
+```r
 theme_classic()$panel.grid
+```
+
+```
+## List of 6
+##  $ colour       : chr "grey92"
+##  $ linewidth    : NULL
+##  $ linetype     : NULL
+##  $ lineend      : NULL
+##  $ arrow        : logi FALSE
+##  $ inherit.blank: logi TRUE
+##  - attr(*, "class")= chr [1:2] "element_line" "element"
 ```
 
 <br>
@@ -121,45 +128,61 @@ Learn more at: [Top R Color Palettes to Know for Great Data Visualization](https
 -   [Awesome List of Hexadecimal Colors You Should Have](https://www.datanovia.com/en/blog/awesome-list-of-hexadecimal-colors-you-should-have/)
 
 
-```{r}
+
+```r
 # Box plot
 ggplot(iris, aes(Species, Sepal.Length)) + 
   geom_boxplot(fill = "#FFDB6D", color = "#C4961A") +
   theme_minimal()
+```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
+```r
 # Scatter plot
 ggplot(iris, aes(Sepal.Length, Sepal.Width)) + 
   geom_point(color = "#00AFBB") +
   theme_minimal()
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-3-2.png)<!-- -->
+
 <br>
 
 **Color by group/category**
 
 
-```{r}
+
+```r
 ggplot(iris, aes(Species, Sepal.Length)) + 
   geom_boxplot(aes(fill = Species)) +
   theme(legend.position = "top") +
   labs(title="Box plot by group")
 ```
 
-```{r}
+![](ggplot2_basics_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+
+
+```r
 ggplot(iris, aes(Sepal.Length, Sepal.Width)) + 
   geom_point(aes(color = Species)) +
   theme(legend.position = "top") +
   labs(title="Scatter plot by group")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+
 
 <br>
 
 **Get the HEX code**
 
-```{r fig.width = 3, fig.height = 3}
+
+```r
 scales::show_col(scales::hue_pal()(4))
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
 
 <br>
 
@@ -177,7 +200,8 @@ For gradient colors, you map the argument `color` and/or `fill` to a continuous 
 
 Set gradient between 2 colors and change the colors for low and high ends of the gradient:
 
-```{r}
+
+```r
 # Specify the colors for low and high ends of gradient
 ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
   geom_point(aes(color = Sepal.Length)) +
@@ -185,7 +209,10 @@ ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
   labs(title="Sequential")
 ```
 
-```{r}
+![](ggplot2_basics_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+
+```r
 # Specify also the colour for mid point
 ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
   geom_point(aes(color = Sepal.Length)) +
@@ -194,17 +221,22 @@ ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
   labs(title="Diverging")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+
 
 
 <br>
 
 
-```{r fig.width = 5, fig.height = 3}
+
+```r
 ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
   geom_point(aes(color = Sepal.Length)) + 
   scale_color_gradientn(colours = rainbow(5)) +
   labs(title="Rainbow gradient (5 colors)")
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 
 <br>
@@ -229,22 +261,29 @@ Use grey color scales:
 Best all around. Easy **discrete** palettes for **colorblindness**
 
 
-```{r fig.width=6, fig.asp= 2}
+
+```r
 library(RColorBrewer)
 display.brewer.all() # to check all colorbrewer palettes
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+
 
 **Palettes for colorblindness:**
 
-```{r fig.width=6, fig.asp=1.5}
+
+```r
 display.brewer.all(colorblindFriendly = TRUE)
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
 
 
 <br>
 
-```{r message=FALSE, warning=FALSE}
+
+```r
 ggplot(iris, aes(Sepal.Length, Sepal.Width))+
   geom_point(aes(color = Species)) +
   scale_color_brewer(palette = "Dark2")+
@@ -255,20 +294,30 @@ ggplot(iris, aes(Sepal.Length, Sepal.Width))+
   labs(title="Brewer on a plot")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+
 <br>
 
 Visualize a single Brewer palette by specifying its name:
 
-```{r fig.width=6, fig.height=2}
+
+```r
 display.brewer.pal(n = 8, name = "Dark2")
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
 
 <br>
 
 Get the HEX code of the palette
 
-```{r}
+
+```r
 brewer.pal(3, "Dark2")
+```
+
+```
+## [1] "#1B9E77" "#D95F02" "#7570B3"
 ```
 
 <br>
@@ -278,9 +327,14 @@ brewer.pal(3, "Dark2")
 Best for **colorblindness** and plots that need **gradient** range of colors.
 
 
-```{r, message=FALSE, warning=FALSE}
+
+```r
 library("viridis")           # Load
 viridis(6)
+```
+
+```
+## [1] "#440154FF" "#414487FF" "#2A788EFF" "#22A884FF" "#7AD151FF" "#FDE725FF"
 ```
 
 <br>
@@ -301,7 +355,8 @@ Four options are available:
 * "viridis" (or "D", the default option)    
 
 
-```{r fig.width=10, fig.height=7}
+
+```r
 plt <- function(nome, opt) {
   ggplot(iris, aes(Sepal.Length, Sepal.Width))+
   geom_point(aes(color = Sepal.Length)) +
@@ -314,10 +369,13 @@ plt("Magma", "A") + plt("Inferno", "B") + plt("Plasma", "C") + plt("Viridis", "D
   plot_annotation(title = "GRADIENT color palettes")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+
 <br>
 
 
-```{r fig.width=10, fig.height=7}
+
+```r
 plt <- function(nome, opt) {
   ggplot(iris, aes(Sepal.Length, Sepal.Width))+
   geom_point(aes(color = Species)) +
@@ -332,10 +390,10 @@ plt("Magma", "A") + plt("Inferno", "B") + plt("Plasma", "C") + plt("Viridis", "D
   plot_annotation(title = "DISCRETE color palettes")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
 
-```{r, include=FALSE}
-rm(list=ls())
-```
+
+
 
 <br>
 
@@ -345,7 +403,8 @@ rm(list=ls())
 
 Scientific journal color palettes.     
 
-```{r}
+
+```r
 library(ggsci)
 
 # Some display plots:
@@ -353,7 +412,17 @@ p1 <- ggplot(subset(diamonds, carat >= 2.2), aes(x=table, y=price, colour=cut)) 
   geom_point(alpha = 0.7) +
   geom_smooth(formula = y ~ x, method = "loess", alpha = 0.05, size = 1, span = 1) +
   labs(title="Color")
+```
 
+```
+## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+## ℹ Please use `linewidth` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.
+```
+
+```r
 p2 <- ggplot(subset(diamonds, carat > 2.2 & depth > 55 & depth < 70), aes(x=depth, fill=cut)) +
   geom_histogram(colour = "black", binwidth = 1, position = "dodge") +
   labs(title="Fill")
@@ -365,42 +434,102 @@ p2 <- ggplot(subset(diamonds, carat > 2.2 & depth > 55 & depth < 70), aes(x=dept
 
 **Lancet Journal (`lancet`)**
 
-```{r fig.height=4, fig.width=10}
+
+```r
 p1 <- p1 + scale_color_lancet()
 p2 <- p2 + scale_fill_lancet()
 p1 + p2
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+
 <br>
 
 **Journal of Clinical Oncology (`jco`)**
 
-```{r fig.height=4, fig.width=10}
+
+```r
 p1 <- p1 + scale_color_jco()
+```
+
+```
+## Scale for colour is already present.
+## Adding another scale for colour, which will replace the existing scale.
+```
+
+```r
 p2 <- p2 + scale_fill_jco()
+```
+
+```
+## Scale for fill is already present.
+## Adding another scale for fill, which will replace the existing scale.
+```
+
+```r
 p1 + p2
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 
 <br>
 
 **Nature Publishing Group (`npg`)** 
 
-```{r fig.height=4, fig.width=10}
+
+```r
 p1 <- p1 + scale_color_npg()
+```
+
+```
+## Scale for colour is already present.
+## Adding another scale for colour, which will replace the existing scale.
+```
+
+```r
 p2 <- p2 + scale_fill_npg()
+```
+
+```
+## Scale for fill is already present.
+## Adding another scale for fill, which will replace the existing scale.
+```
+
+```r
 p1 + p2
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
 <br>
 
 **American Association for the Advancement of Science (`aaas`)**
 
-```{r fig.height=4, fig.width=10}
+
+```r
 p1 <- p1 + scale_color_aaas()
+```
+
+```
+## Scale for colour is already present.
+## Adding another scale for colour, which will replace the existing scale.
+```
+
+```r
 p2 <- p2 + scale_fill_aaas()
+```
+
+```
+## Scale for fill is already present.
+## Adding another scale for fill, which will replace the existing scale.
+```
+
+```r
 p1 + p2
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
 
 
@@ -411,15 +540,32 @@ p1 + p2
 
 **Tron Legacy (`tron`)**
 
-```{r fig.height=4, fig.width=10}
+
+```r
 p1 <- p1 + scale_color_tron()
+```
+
+```
+## Scale for colour is already present.
+## Adding another scale for colour, which will replace the existing scale.
+```
+
+```r
 p2 <- p2 + scale_fill_tron()
+```
+
+```
+## Scale for fill is already present.
+## Adding another scale for fill, which will replace the existing scale.
+```
+
+```r
 p1 + p2
 ```
 
-```{r, include=FALSE}
-rm(list=ls())
-```
+![](ggplot2_basics_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+
+
 
 <br>
 
@@ -427,13 +573,16 @@ rm(list=ls())
 
 ## Scatter plot
 
-```{r}
+
+```r
 ggplot(data = mpg) + # layer1 => data
   geom_point(        # layer2 => geom (points)
     mapping = aes(x = displ, y = hwy) # mapping => how variables map to visuals
   ) +
   labs(title="Simple scatter plot")
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 <br>
 
@@ -442,7 +591,8 @@ The fittings are more informative giving an overview of the trends and the corre
 We added a linear fit to the data that shows a positive trend in the rise in temperature over the years.
 By adding all these features to the above scatter plot, we made it more self-explanatory.
 
-```{r message=FALSE}
+
+```r
 mpg |>  ggplot(aes(displ, hwy)) +
   geom_smooth(method = "lm", se = FALSE,            # linear fit to the data point
               color = "blue", size = 1) +           # tuning line color and thickness
@@ -451,8 +601,9 @@ mpg |>  ggplot(aes(displ, hwy)) +
        title = "Scatter plot with linear fit",      # adding title to the plot
        subtitle = "Subtitle goes here",             # adding subtitles to the plot
        caption = "Source: goes here")               # adding caption to the plot
-
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
 
 <br>
 
@@ -461,7 +612,8 @@ For these types of cases either we can use the default smoothing function or def
 
 Below we can see three plots, one on the left uses the default `geom_smooth()` function, the middle one uses the linear fit and the rightmost uses the user-defined function.
 
-```{r fig.width=10, fig.height=4}
+
+```r
 ### default smooth fit
 p2 <- mpg |> ggplot(aes(displ, hwy)) + 
   geom_smooth(stat = "smooth", color = "blue", size = 1) +
@@ -488,9 +640,14 @@ p4 <- mpg |> ggplot(aes(displ, hwy)) +
 p2 + p3 + p4
 ```
 
-```{r, include=FALSE}
-rm(list=ls()) # Limpa o global environment
 ```
+## `geom_smooth()` using method = 'loess' and formula = 'y ~ x'
+## `geom_smooth()` using formula = 'y ~ x'
+```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+
+
 
 <br>
 
@@ -502,7 +659,8 @@ rm(list=ls()) # Limpa o global environment
 
 
 
-```{r}
+
+```r
 (data <- world_bank_pop |> 
    filter(indicator %in% c("SP.POP.TOTL", "SP.URB.TOTL")) |> 
    pivot_longer(3:20, names_to="year", names_transform=as.integer, values_to="pop") |> 
@@ -513,6 +671,23 @@ rm(list=ls()) # Limpa o global environment
    summarise(pop = round(sum(pop)/1e9), .by=c(year, type)))
 ```
 
+```
+## # A tibble: 36 × 3
+##     year type    pop
+##    <int> <chr> <dbl>
+##  1  2000 Urban    29
+##  2  2000 Rural    36
+##  3  2001 Urban    29
+##  4  2001 Rural    37
+##  5  2002 Urban    30
+##  6  2002 Rural    37
+##  7  2003 Urban    31
+##  8  2003 Rural    37
+##  9  2004 Urban    32
+## 10  2004 Rural    37
+## # ℹ 26 more rows
+```
+
 
 <br>
 
@@ -520,7 +695,8 @@ rm(list=ls()) # Limpa o global environment
 
 <br>
 
-```{r}
+
+```r
 data |> summarise(pop=sum(pop), .by=year) |> 
   ggplot(aes(x=year, y=pop, group=1)) +
   geom_line() + geom_point() +
@@ -528,6 +704,8 @@ data |> summarise(pop=sum(pop), .by=year) |>
   labs(title = "Simple line chart", x="Year", y=NULL,
        subtitle="Population (billions)")
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-31-1.png)<!-- -->
 
 
 **Multiple lines**
@@ -537,7 +715,8 @@ In this case, we want them to be grouped by sex.
 
 PLOT Multiple lines by color Planos
 
-```{r fig.asp=.8}
+
+```r
 data |> 
   ggplot(aes(x=year, y=pop, group=type, color=type)) +
   geom_line(size = 1) + geom_point() +
@@ -556,6 +735,8 @@ data |>
   )
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
+
 <br>
 
 *Too many lines! Need a continuous scale of gradient colors!*
@@ -564,7 +745,8 @@ I have data with about 100 ordered categories. I would like to plot each categor
 
 Since a discrete legend is useless anyway, you could use a continuous color scale:
 
-```{r fig.asp=.8}
+
+```r
 df <- data.frame(expand.grid(1:100, seq(0, 1, by = .1)))
 names(df) <- c("category", "X")
 df <- within(df, {
@@ -583,9 +765,9 @@ ggplot(data = df, aes(x=X, y=Y, color=as.integer(category), group=category)) +
        subtitle = "Uses a continuous scale of gradient colors")
 ```
 
-```{r include=FALSE}
-rm(list=ls())
-```
+![](ggplot2_basics_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
+
+
 
 
 
@@ -599,7 +781,8 @@ rm(list=ls())
 Note you can adjust the width of the bar. The default width between bars is 0.9. The closer the width is to 1, the closer together the bars will be. The closer the width is to 0, the more spread out the bars will be.
 
 
-```{r}
+
+```r
 (data <- midwest |> summarise(across(popwhite:popother, sum), .by=state) |> 
   pivot_longer(popwhite:popother, values_to="pop", names_to="race") |> 
   mutate(race = str_sub(race, 4,-1),
@@ -608,8 +791,25 @@ Note you can adjust the width of the bar. The default width between bars is 0.9.
   summarise(pop = sum(pop), .by=c(state, race)))
 ```
 
+```
+## # A tibble: 10 × 3
+##    state race      pop
+##    <chr> <fct>   <int>
+##  1 IL    white 8952978
+##  2 IL    other 2477624
+##  3 IN    white 5020700
+##  4 IN    other  523459
+##  5 MI    white 7756086
+##  6 MI    other 1539211
+##  7 OH    white 9521756
+##  8 OH    other 1325359
+##  9 WI    white 4512523
+## 10 WI    other  379246
+```
 
-```{r}
+
+
+```r
 data |> summarise(pop = sum(pop), .by=state) |> 
   ggplot(aes(x=state, y=pop)) +
   # geom_col() == geom_bar(stat = "identity") # default = stacked bars
@@ -625,6 +825,8 @@ data |> summarise(pop = sum(pop), .by=state) |>
   labs(title="Simple bar chart", y=NULL, subtitle="US Midwest population (millions)")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
+
 
 <br>
 
@@ -635,7 +837,8 @@ data |> summarise(pop = sum(pop), .by=state) |>
 
 The ggplot2 package uses stacked bar charts by default.
 
-```{r fig.height=4, fig.width=10}
+
+```r
 p1 <- data |> mutate(pop = pop/1e3) |> 
   ggplot(aes(x=state, y=pop, fill=race)) +
   geom_col(color = "white") + # default position = "stack"
@@ -668,11 +871,14 @@ p2 <- data |>
 p1 + p2 + plot_layout(guides = 'collect')
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
+
 <br>
 
 Here's a solution that adds a "position" column to the df, to use with `geom_text()` and place the labels exactly where they belong:
 
-```{r fig.asp=.8}
+
+```r
 mpg |> group_by(class, year=as.factor(year)) |> tally() |> ungroup() |>
   arrange(desc(class)) |> 
   mutate(pos = cumsum(n) - n/2, .by=year) |> # create "position" column as 1/2 the y-axis variable
@@ -688,6 +894,8 @@ mpg |> group_by(class, year=as.factor(year)) |> tally() |> ungroup() |>
        y=NULL, x=NULL)
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
+
 <br>
 
 ### Grouped bar
@@ -696,7 +904,8 @@ mpg |> group_by(class, year=as.factor(year)) |> tally() |> ungroup() |>
 Adjust Spacing Between Bars: The `padding` argument of `position_dodge2()` controls the spacing between bars within the same cluster.
 
 
-```{r}
+
+```r
 data |> mutate(pop = pop/1e3) |> 
   ggplot(aes(x=state, y=pop, fill=race)) +
   geom_col(position=position_dodge2(padding=.05)) +
@@ -710,6 +919,8 @@ data |> mutate(pop = pop/1e3) |>
   labs(title="Grouped or Clustered bar chart", y=NULL)
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
+
 
 <br>
 
@@ -718,7 +929,8 @@ data |> mutate(pop = pop/1e3) |>
 **Horizontal bar charts** are useful when there are many categories on the x-axis or when their names are long.
 The `coord_flip()` is used to turn any vertical bar chart into a horizontal one:
 
-```{r fig.height=6, fig.width=10}
+
+```r
 p1 <- mpg |> 
   summarise(hwy = mean(hwy), .by=manufacturer) |> 
   ggplot(aes(x=manufacturer, y=hwy)) +
@@ -741,6 +953,8 @@ p2 <- mpg |>
 p1 + p2 + plot_annotation(title = "Horizontal bar charts")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-40-1.png)<!-- -->
+
 <br>
 
 ## Area chart
@@ -748,7 +962,8 @@ p1 + p2 + plot_annotation(title = "Horizontal bar charts")
 Stacking is also the default behaviour for most area plots.
 Stacking area charts are also useful for time series.
 
-```{r}
+
+```r
 (data <- world_bank_pop |> 
    filter(indicator %in% c("SP.POP.TOTL", "SP.URB.TOTL")) |> 
    pivot_longer(3:20, names_to="year", names_transform=as.integer, values_to="pop") |> 
@@ -759,10 +974,28 @@ Stacking area charts are also useful for time series.
    summarise(pop = round(sum(pop)/1e9), .by=c(year, type)))
 ```
 
+```
+## # A tibble: 36 × 3
+##     year type    pop
+##    <int> <chr> <dbl>
+##  1  2000 Urban    29
+##  2  2000 Rural    36
+##  3  2001 Urban    29
+##  4  2001 Rural    37
+##  5  2002 Urban    30
+##  6  2002 Rural    37
+##  7  2003 Urban    31
+##  8  2003 Rural    37
+##  9  2004 Urban    32
+## 10  2004 Rural    37
+## # ℹ 26 more rows
+```
+
 
 <br>
 
-```{r}
+
+```r
 data |> 
   ggplot(aes(x=year, y=pop, fill=type, group=type)) +
   geom_area(color="white") +
@@ -772,9 +1005,9 @@ data |>
   labs(title="Simple area chart", x=NULL)
 ```
 
-```{r, include=FALSE}
-rm(list=ls()) # Limpa o global environment
-```
+![](ggplot2_basics_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
+
+
 
 <br>
 
@@ -789,7 +1022,8 @@ Combine bar and line chart
 Sometimes while dealing with hierarchical data we need to combine two or more various chart types into a single chart for better visualization and analysis.
 
 
-```{r}
+
+```r
 data <- data.frame(
   year = c(2014, 2015, 2016, 2017, 2018, 2019,2020),
   course = c(35, 30, 40, 25, 30, 35, 65),
@@ -804,6 +1038,8 @@ data |> ggplot(aes(x=as.factor(year))) +
        x=NULL, y=NULL,
        subtitle="Number of Courses Sold and % enrolled")
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-44-1.png)<!-- -->
 
 So, we need a secondary axis in order to fit the line properly in the same chart area.
 
@@ -826,7 +1062,8 @@ Syntax:
 
 The scaling factor is the trickiest part to handle while dealing with a secondary axis. Since the secondary axis needs to be in percentage we have to use the scale factor of 0.01 and write the formula of conversion in the trans argument of `sec_axis()`. And since you are scaling with 0.01 in the formula, you also have to multiply the same axis with 100 in the `geom_line()` in order to make balance in scaling.
 
-```{r}
+
+```r
 data |> ggplot(aes(x=as.factor(year)))  + 
   geom_col(aes(y=course), fill="cadetblue")+
   geom_line(aes(y=100*pct_enroll, group=1), color="red", size=1) +
@@ -840,12 +1077,12 @@ data |> ggplot(aes(x=as.factor(year)))  +
        x=NULL, y="Number of Courses")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-45-1.png)<!-- -->
+
 The secondary axis added is a fraction of the original axis value.
 
 
-```{r, include=FALSE}
-rm(list=ls()) # Limpa o global environment
-```
+
 
 
 <br>
@@ -857,7 +1094,8 @@ rm(list=ls()) # Limpa o global environment
 Let's make two separate plots and then draw them on top of each other.
 First, let's draw a bar plot of the number of cars in different classes in the mpg dataset.
 
-```{r  fig.width = 5, fig.height = 3}
+
+```r
 # city_mpg <- mpg |>
 #   mutate(class = fct_lump(class, 4, other_level = "other")) |>
 #   group_by(class) |>
@@ -903,9 +1141,7 @@ First, let's draw a bar plot of the number of cars in different classes in the m
 # ggdraw(aligned_plots[[1]]) + draw_plot(aligned_plots[[2]])
 ```
 
-```{r, include=FALSE}
-rm(list=ls()) # Limpa o global environment
-```
+
 
 
 ------------------------------------------------------------------------
@@ -924,7 +1160,8 @@ rm(list=ls()) # Limpa o global environment
 
 [Aligning across pages](https://patchwork.data-imaginist.com/articles/guides/multipage.html)
 
-```{r}
+
+```r
 theme_update(
   panel.border = element_rect(fill=NA)
 )
@@ -934,15 +1171,20 @@ p2 <- ggplot(mtcars) + geom_boxplot(aes(gear, disp, group = gear))
 p1 + p2 + plot_annotation(title = "patchwork: 2 plots side by side")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-49-1.png)<!-- -->
+
 `patchwork` provides rich support for arbitrarily complex layouts with full alignment.
 As an example, check out this very readable code for nesting three plots on top of a third:
 
-```{r message=FALSE, fig.width=6, fig.asp=.7}
+
+```r
 p3 <- ggplot(mtcars) + geom_smooth(aes(disp, qsec))
 p4 <- ggplot(mtcars) + geom_bar(aes(carb))
 
 (p1 | p2 | p3) / p4 + plot_annotation(title="patchwork: any way you want it")
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-50-1.png)<!-- -->
 
 <br>
 
@@ -954,7 +1196,8 @@ p4 <- ggplot(mtcars) + geom_bar(aes(carb))
 
 [Setting individual axis limits with facet wrap and scales free](https://stackoverflow.com/questions/18046051/setting-individual-axis-limits-with-facet-wrap-and-scales-free-in-ggplot2)
 
-```{r fig.asp=.8}
+
+```r
 p <- ggplot(mpg, aes(displ, cty)) + geom_point()
 
 # Use vars() to supply variables from the dataset:
@@ -962,26 +1205,37 @@ p + facet_grid(rows = vars(drv)) +
   labs(title="facet_grid() in rows")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-51-1.png)<!-- -->
+
 <br>
 
-```{r fig.width=8, fig.height=3}
+
+```r
 p + facet_grid(cols = vars(cyl)) + 
   labs(title = "facet_grid() in columns")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-52-1.png)<!-- -->
+
 <br>
 
-```{r fig.width=6, fig.asp=.8}
+
+```r
 p + facet_grid(drv ~ cyl) +
   labs(title="facet_grid in rows and columns")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-53-1.png)<!-- -->
+
 <br>
 
-```{r fig.width=6, fig.asp=1}
+
+```r
 p + facet_wrap(drv~cyl, ncol=4) +
   labs(title = "facet_wrap in rows and columns (notice the difference?)")
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-54-1.png)<!-- -->
 
 <br>
 
@@ -989,7 +1243,8 @@ To change plot order of facet grid, change the order of variable levels with `fa
 
 <br>
 
-```{r fig.width=8, fig.height=4}
+
+```r
 ggplot(mtcars, aes(mpg, wt, colour = factor(cyl))) +
   geom_point() +
   facet_wrap(~cyl, scales="free_y") +
@@ -998,14 +1253,14 @@ ggplot(mtcars, aes(mpg, wt, colour = factor(cyl))) +
        caption="Note: to free the scales on both axis just use scales='free' argument")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-55-1.png)<!-- -->
+
 <br>
 
 I would like to have the x-axis labels show up on each facet. How?\
 [stackoverflow](https://stackoverflow.com/questions/17661052/force-x-axis-text-on-for-all-facets-of-a-facet-grid-plot)
 
-```{r include=FALSE}
-rm(list=ls()) # Limpa o global environment
-```
+
 
 
 <br>
@@ -1042,7 +1297,8 @@ Enter `forcats`. The `forcats` library is a library from the tidyverse especiall
 
 The `fct_reorder()` function allows you to reorder the factor following the value of another column.
 
-```{r fig.width = 8, fig.height = 3}
+
+```r
 library(forcats)
 
 # Reorder following the value of another column:
@@ -1068,11 +1324,14 @@ p2 <- mpg |> group_by(manufacturer) |> tally(name="qtd") |>
 p1 + p2
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-57-1.png)<!-- -->
+
 \
 
 If you have several values per level of your factor, you can specify which function to apply to aggregate and determine the order. The default is to use the median, but you can use the number of data points per group to make the classification:
 
-```{r fig.width=8, fig.height=3}
+
+```r
 # Using sum
 p1 <- mpg |>
   mutate(class = fct_reorder(class, hwy, .fun='sum')) |>
@@ -1092,13 +1351,16 @@ p2 <- mpg |>
 p1 + p2 & theme(legend.position="none", panel.border=element_rect(fill=NA))
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-58-1.png)<!-- -->
+
 <br>
 
 Here we use the mpg data and summarize the number of car model variants per manufacturer. We also adjust the manufacturer labels and order them as they should appear in the final plot. We want to order the bars based on their value in our visualization.
 
 Keep in mind that we have reversed the ordering since `{ggplot2}` plots factors from bottom to top when they are mapped to y.
 
-```{r echo=TRUE}
+
+```r
 mpg_sum <- mpg |> 
   filter(year == 2008) |> 
   
@@ -1123,18 +1385,35 @@ mpg_sum <- mpg |>
 mpg_sum
 ```
 
+```
+## # A tibble: 10 × 2
+##    manufacturer     n
+##    <fct>        <int>
+##  1 Other           17
+##  2 Nissan           7
+##  3 Subaru           8
+##  4 Hyundai          8
+##  5 Audi             9
+##  6 Ford            10
+##  7 Volkswagen      11
+##  8 Chevrolet       12
+##  9 Toyota          14
+## 10 Dodge           21
+```
+
 <br>
 
-```{r}
+
+```r
 ggplot(mpg_sum, aes(x = n, y = manufacturer)) +
   geom_col(fill = "cadetblue") +
   scale_x_continuous(expand=expansion(mult=c(0,.1))) +
   labs(title = "mpg ordered by manufacturer in reverse", y=NULL, x=NULL)
 ```
 
-```{r, include=FALSE}
-rm(list=ls()) # Limpa o global environment
-```
+![](ggplot2_basics_files/figure-html/unnamed-chunk-60-1.png)<!-- -->
+
+
 
 
 -------------------------------------------------------------------------------------------------
@@ -1148,7 +1427,8 @@ rm(list=ls()) # Limpa o global environment
 
 Customize plot and axis titles using labs.
 
-```{r fig.width=6, fig.asp=.6}
+
+```r
 ggplot(mpg, aes(displ, hwy)) + 
   geom_point(aes(colour = factor(cyl))) + 
   labs(
@@ -1161,6 +1441,8 @@ ggplot(mpg, aes(displ, hwy)) +
   theme_light()
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-62-1.png)<!-- -->
+
 <br>
 
 Note that setting `labs(x = NULL)` removes the label and its space.\
@@ -1169,7 +1451,8 @@ The values supplied to `labs()` are typically text strings, with `\n` used to sp
 
 The rules by which these expressions are interpreted can be found by typing `?plotmath`.
 
-```{r}
+
+```r
 values <- seq(from = -2, to = 2, by = .01)
 df <- data.frame(x = values, y = values ^ 3)
 ggplot(df, aes(x, y)) + 
@@ -1177,6 +1460,8 @@ ggplot(df, aes(x, y)) +
   labs(y = quote(f(x) == x^3),
        title = "Math expression on the axis title")
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-63-1.png)<!-- -->
 
 <br>
 
@@ -1198,7 +1483,8 @@ When you type `scales::label_` autocomplete will provide you with a list of labe
 **Customize legend labels:** You can use the `labels` argument in a scale to customize labeling.
 You can provide a function or a character vector to the labels argument.
 
-```{r fig.width=6, fig.asp=.6}
+
+```r
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = displ, y = hwy, color = drv)) +
   scale_colour_discrete(
@@ -1216,6 +1502,8 @@ ggplot(data = mpg) +
         axis.title = element_text())
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-64-1.png)<!-- -->
+
 <br>
 
 **Control legend layout:** You can control how many rows or columns your legend layout will be with `guides(colour = guide_legend(nrow = 1))`
@@ -1225,7 +1513,8 @@ ggplot(data = mpg) +
 **Reverse legend order:** You can reverse the order of items in the legend guide without affecting the plot.
 If you want to reverse the order of the plot itself (including the legend), then check out **ORDERING** section.
 
-```{r fig.width = 8, fig.height = 3}
+
+```r
 p1 <- mpg |> group_by(class, year = as.factor(year)) |> 
   tally() |> 
   ggplot() +
@@ -1248,11 +1537,14 @@ p2 <- mpg |> group_by(class, year = as.factor(year)) |>
 p1 + p2
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-65-1.png)<!-- -->
+
 <br>
 
 You can create a single legend for separate geoms. In `{ggplot}`, legends are automatically created for mapped aesthetics. You can add such mappings as follows:
 
-```{r fig.width=7, fig.asp=.5}
+
+```r
 mpg |> 
   summarise(hwy = mean(hwy), cty = mean(cty), .by=manufacturer) |> 
   ggplot(aes(x=manufacturer)) + 
@@ -1271,6 +1563,8 @@ mpg |>
     title = "A legend for each geom"
   )
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-66-1.png)<!-- -->
 
 <br>
 
@@ -1329,7 +1623,8 @@ The default behaviour in ggplot2 is to convert any data values outside the scale
 This means that changing the limits of a scale is not always the same as visually zooming in to a region of the plot.
 If your goal is to zoom in on part of the plot, it is usually better to use the `xlim` and `ylim` arguments of `coord_cartesian()`:
 
-```{r warning=FALSE, fig.width=8, fig.asp=.5}
+
+```r
 plot <- ggplot(mpg, aes(drv, hwy)) + 
   geom_hline(yintercept = 28, colour = "red") + 
   geom_boxplot()
@@ -1345,6 +1640,8 @@ p3 <- plot + labs(title = "setting limits", subtitle="distorts the boxplot") +
 p1 + p2 + p3
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-67-1.png)<!-- -->
+
 \
 
 **Breaks**
@@ -1353,16 +1650,20 @@ Setting the locations of the axis tick marks is a common task. Axis tick marks a
 
 To set breaks manually, pass a vector of data values to breaks, or set `breaks = NULL` to remove the breaks and the corresponding tick marks entirely. In the plot below, removing the y-axis breaks also removes the corresponding grid lines.
 
-```{r}
+
+```r
 plot + scale_y_continuous(breaks = NULL) + labs(title="Y Axis breaks = NULL")
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-68-1.png)<!-- -->
 
 <br>
 
 Another approach is specifying a fixed width that defines the spacing between breaks. The `breaks_width()` function is used for this.
 The first example below shows how to fix the width at a specific value; the second example illustrates the use of the offset argument that shifts all the breaks by a specified amount:
 
-```{r fig.width=8}
+
+```r
 p1 <- plot + scale_y_continuous(breaks = scales::breaks_width(5)) + 
   labs(title="fixed @ 5")
 
@@ -1375,9 +1676,9 @@ p3 <- plot + scale_y_continuous(breaks = scales::breaks_width(5, offset(-10))) +
 p1 + p2 + p3 + plot_annotation(title="Setting 'breaks_width()' argument on 'scale_*_continuous()'")
 ```
 
-```{r include=FALSE}
-rm(list=ls())
-```
+![](ggplot2_basics_files/figure-html/unnamed-chunk-69-1.png)<!-- -->
+
+
 
 
 <br>
@@ -1386,7 +1687,8 @@ rm(list=ls())
 
 \
 
-```{r}
+
+```r
 ts.dia <- as_tibble(EuStockMarkets) |> cbind(
   DATE = seq.Date(as.Date("1991-1-1"), by="days", length.out = 1860)
 ) |> 
@@ -1409,9 +1711,12 @@ ts.dia |>
   labs(title="Formatting a date axis by year", x = "Year", y=NULL)
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-71-1.png)<!-- -->
+
 \
 
-```{r}
+
+```r
 ts.dia |> 
   group_by(mes = make_date(year(date),month(date),1), name) |> 
   summarise(value = mean(value), .groups="drop") |> 
@@ -1428,10 +1733,13 @@ ts.dia |>
   labs(title="Formatting a date axis by month", x = "Month", y=NULL)
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-72-1.png)<!-- -->
+
 \
 
 
-```{r}
+
+```r
 ts.dia |> 
   ggplot(aes(x = date, y = value, group = name, color = name)) +
   geom_line(size=.6) + 
@@ -1445,9 +1753,9 @@ ts.dia |>
   labs(title="Formatting a date axis by day", x = NULL, y=NULL)
 ```
 
-```{r, include=FALSE}
-rm(list=ls()) # Limpa o global environment
-```
+![](ggplot2_basics_files/figure-html/unnamed-chunk-73-1.png)<!-- -->
+
+
 
 \
 
@@ -1474,7 +1782,8 @@ To figure out how to control date scales check out AXIS SCALES > Time series sec
 
 
 
-```{r}
+
+```r
 population |> 
   ggplot(aes(x=as.factor(year), y=population)) +
   geom_col(fill = "cadetblue") +
@@ -1485,10 +1794,13 @@ population |>
   labs(x=NULL, title="Axis labels at an angle")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-75-1.png)<!-- -->
+
 <br>
 
 
-```{r warning=FALSE}
+
+```r
 txhousing |> mutate(date=make_date(year,month,1)) |> 
   filter(city %in% c("Austin", "Houston")) |> 
   na.omit() |> 
@@ -1506,6 +1818,8 @@ txhousing |> mutate(date=make_date(year,month,1)) |>
   labs(x = NULL, title="Format the date axis")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-76-1.png)<!-- -->
+
 <br>
 
 ## Data labels
@@ -1516,7 +1830,8 @@ txhousing |> mutate(date=make_date(year,month,1)) |>
 
 <br>
 
-```{r}
+
+```r
 df <- data.frame(
   x = c(1, 1, 2, 2, 1.5),
   y = c(1, 2, 1, 2, 1.5),
@@ -1529,17 +1844,23 @@ ggplot(df, aes(x, y)) +
   labs(title="Include data labels on the plot")
 ```
 
-```{r}
+![](ggplot2_basics_files/figure-html/unnamed-chunk-77-1.png)<!-- -->
+
+
+```r
 ggplot(df, aes(x, y)) +
   geom_text(aes(label = text), vjust = "inward", hjust = "inward") +
   labs(title="adjust the positioning using 'inward'")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-78-1.png)<!-- -->
+
 <br>
 
 You find several examples in `?geom_text` on how to position geom_text on dodged or stacked bars.
 
-```{r}
+
+```r
 df <- data.frame(
   x = factor(c(1, 1, 2, 2)),
   y = c(1, 3, 2, 1),
@@ -1550,7 +1871,8 @@ df <- data.frame(
 <br>
 
 
-```{r warning=FALSE, fig.asp=.7}
+
+```r
 ggplot(data = df, aes(x, y, group = grp)) +
   geom_col(aes(fill = grp), position = position_dodge()) +
   geom_text(aes(label = y), position = position_dodge()) +
@@ -1561,10 +1883,13 @@ ggplot(data = df, aes(x, y, group = grp)) +
        x=NULL, y=NULL)
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-80-1.png)<!-- -->
+
 <br>
 
 
-```{r fig.asp=.7}
+
+```r
 ggplot(data = df, aes(x, y, group = grp)) +
   geom_col(aes(fill = grp), position = position_dodge()) +
   geom_text(aes(label = y), position = position_dodge(0.9)) +
@@ -1575,11 +1900,14 @@ ggplot(data = df, aes(x, y, group = grp)) +
        x=NULL, y=NULL)
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-81-1.png)<!-- -->
+
 <br>
 
 
 
-```{r fig.asp=.7}
+
+```r
 ggplot(data = df, aes(x, y, group = grp)) +
   geom_col(aes(fill = grp), position = position_dodge()) +
   geom_text(
@@ -1594,10 +1922,13 @@ ggplot(data = df, aes(x, y, group = grp)) +
        x=NULL, y=NULL)
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-82-1.png)<!-- -->
+
 <br>
 
 
-```{r fig.asp=.7}
+
+```r
 ggplot(data = df, aes(x, y, group = grp)) +
   geom_col(aes(fill = grp), color="white", width=.5) +
   geom_text(aes(label = y), position = position_stack(vjust = 0.5))  +
@@ -1608,43 +1939,97 @@ ggplot(data = df, aes(x, y, group = grp)) +
        x=NULL, y=NULL)
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-83-1.png)<!-- -->
+
 <br>
 
-```{r fig.width = 5, fig.height = 3}
+
+```r
 p <- ggplot(mtcars, aes(wt, mpg, label = rownames(mtcars)))
 
 p + geom_text()
+```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-1.png)<!-- -->
+
+```r
 p + geom_text(check_overlap = TRUE) # Avoid overlaps
+```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-2.png)<!-- -->
+
+```r
 p + geom_label() # Labels with background
+```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-3.png)<!-- -->
+
+```r
 p + geom_text(size = 10) # Change size of the label
+```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-4.png)<!-- -->
+
+```r
 # Position data labels ==========================
 p +
   geom_point() +
   geom_text(hjust = 0, nudge_x = 0.05)
+```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-5.png)<!-- -->
+
+```r
 p +
   geom_point() +
   geom_text(vjust = 0, nudge_y = 0.5)
+```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-6.png)<!-- -->
+
+```r
 p +
   geom_point() +
   geom_text(angle = 45)
+```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-7.png)<!-- -->
 
+```r
 # Add aesthetic mappings
 p + geom_text(aes(colour = factor(cyl)))
+```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-8.png)<!-- -->
+
+```r
 p + geom_text(aes(colour = factor(cyl))) + scale_colour_discrete(l = 40)
+```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-9.png)<!-- -->
+
+```r
 p + geom_label(aes(fill = factor(cyl)), colour = "white", fontface = "bold")
+```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-10.png)<!-- -->
+
+```r
 p + geom_text(aes(size = wt))
+```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-11.png)<!-- -->
+
+```r
 # Scale height of text, rather than sqrt(height)
 p +
   geom_text(aes(size = wt)) +
   scale_radius(range = c(3,6))
+```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-12.png)<!-- -->
+
+```r
 # You can display expressions by setting parse = TRUE.  The
 # details of the display are described in ?plotmath, but note that
 # geom_text uses strings, not expressions.
@@ -1655,9 +2040,9 @@ p +
   )
 ```
 
-```{r include=FALSE}
-rm(list=ls())
-```
+![](ggplot2_basics_files/figure-html/unnamed-chunk-84-13.png)<!-- -->
+
+
 
 
 <br>
@@ -1686,7 +2071,8 @@ rm(list=ls())
 Typically, you can either put annotations in the foreground (using alpha if needed so you can still see the data), or in the background. With the default background, a thick white line makes a useful reference: it's easy to see but it doesn't jump out at you.
 
 
-```{r warning=FALSE, fig.width=7}
+
+```r
 presidential <- subset(presidential, start > economics$date[1] & start <= max(economics$date))
 
 ggplot(economics, aes(date, unemploy)) + 
@@ -1697,13 +2083,16 @@ ggplot(economics, aes(date, unemploy)) +
   labs(title = "US unemployment over time", y=NULL, x=NULL)
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-86-1.png)<!-- -->
+
 <br>
 
 One useful way to annotate this plot is to use shading to indicate which president was in power at the time. \
 \
 Notice that there is little new here: for the most part, annotating plots in `ggplot2` is a straightforward manipulation of existing geoms. There is one special thing to note in this code: the use of `-Inf` and `Inf` as positions. These refer to the top and bottom (or left and right) limits of the plot.
 
-```{r warning=FALSE, fig.width=7, fig.height=3.5}
+
+```r
 economics |> na.omit() |> ggplot() + 
   # Shading:
   geom_rect(
@@ -1725,9 +2114,9 @@ economics |> na.omit() |> ggplot() +
   labs(title="Annotations on top of the plot", x=NULL, y=NULL)
 ```
 
-```{r, include=FALSE}
-rm(list=ls()) # Limpa o global environment
-```
+![](ggplot2_basics_files/figure-html/unnamed-chunk-87-1.png)<!-- -->
+
+
 
 
 
@@ -1735,7 +2124,8 @@ rm(list=ls()) # Limpa o global environment
 
 This technique can be applied in other ways too. For instance, you can use it to add a single annotation to a plot.
 
-```{r warning=FALSE, fig.width=7}
+
+```r
 annotation <- "Unemployment rates in the US\nhave varied a lot over the years"
 # paste(strwrap("Unemployment rates in the US have varied a lot over the years", 40), collapse="\n")
 
@@ -1751,15 +2141,16 @@ economics |>
   labs(title = "A single text annotation on a plot", y=NULL, x=NULL)
 ```
 
-```{r, include=FALSE}
-rm(list=ls()) # Limpa o global environment
-```
+![](ggplot2_basics_files/figure-html/unnamed-chunk-89-1.png)<!-- -->
+
+
 
 <br>
 
 A common form of annotation is to highlight a subset of points by drawing larger points in a different color underneath the main data set. To highlight vehicles manufactured by Subaru you could use this to create the basic plot:
 
-```{r}
+
+```r
 p <- ggplot(mpg, aes(displ, hwy)) +
   geom_point(
     data = filter(mpg, manufacturer == "subaru"), 
@@ -1776,12 +2167,15 @@ p +
   labs(title="Highlighting data points with legend inside the plot area")
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-91-1.png)<!-- -->
+
 This approach has the advantage of creating a label inside the plot region, but the drawback is that the label is distant from the points it picks out (otherwise the orange and black dot adjacent to the label might be confused for real data).
 
 <br>
 
 
-```{r}
+
+```r
 p + 
   annotate(
     geom = "curve", x = 4, y = 35, xend = 2.65, yend = 27, 
@@ -1790,6 +2184,8 @@ p +
   annotate(geom = "text", x = 4.1, y = 35, label = "subaru", hjust = "left") +
   labs(title="Highlighting data points with an arrow legend")
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-92-1.png)<!-- -->
 
 <br>
 
@@ -1809,7 +2205,8 @@ A third approach to direct labelling is provided in the [gghighlight package](ht
 
 You may want the reader to compare groups across facets. In the plot below it is easy to see the relationship within each facet, but the subtle differences across facets do not pop out:
 
-```{r fig.width=10, fig.height=3.5}
+
+```r
 ggplot(diamonds, aes(log10(carat), log10(price))) + 
   geom_bin2d() + 
   facet_wrap(vars(cut), nrow = 1) +
@@ -1817,11 +2214,14 @@ ggplot(diamonds, aes(log10(carat), log10(price))) +
   labs(title="Visual aids to compare facets", y=NULL, x=NULL)
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-93-1.png)<!-- -->
+
 <br>
 
 It is much easier to see these subtle differences if we add a reference line. In this plot, each facet displays the data for one category against the same regression line. This makes it easier to compare the facets to each other because there is shared reference line to assist the visual comparison.
 
-```{r fig.width=10, fig.height=3.5}
+
+```r
 mod_coef <- coef(lm(log10(price) ~ log10(carat), data = diamonds))
 ggplot(diamonds, aes(log10(carat), log10(price))) + 
   geom_bin2d() + 
@@ -1832,9 +2232,9 @@ ggplot(diamonds, aes(log10(carat), log10(price))) +
   labs(title="Adding a reference line", y=NULL, x=NULL)
 ```
 
-```{r, include=FALSE}
-rm(list=ls()) # Limpa o global environment
-```
+![](ggplot2_basics_files/figure-html/unnamed-chunk-94-1.png)<!-- -->
+
+
 
 <br>
 
@@ -1844,7 +2244,8 @@ rm(list=ls()) # Limpa o global environment
 
 Use parenthesis to output the plot immediately
 
-```{r fig.width=5, fig.asp=2}
+
+```r
 (plot <- as_tibble(USArrests, rownames = "States") |> 
    ggplot(aes(y=fct_reorder(States, Murder, .desc = FALSE), x=Murder)) + 
    geom_col(fill="red") +
@@ -1855,6 +2256,8 @@ Use parenthesis to output the plot immediately
    ))
 ```
 
+![](ggplot2_basics_files/figure-html/unnamed-chunk-96-1.png)<!-- -->
+
 <br>
 
 ## Switch data
@@ -1863,7 +2266,8 @@ Minimize repetitive ggplot function by switching data.
 Instead of writing ggplot commands, again and again, use `%+%` to override the current data with the new data.
 ***Warning**: For `%+%` to work, make sure the column names of the new data matches the column name of the dataset being replaced.*
 
-```{r fig.width=5, fig.asp=1.7}
+
+```r
 plot %+% (as_tibble(USArrests, rownames = "States")[,c(1,3)]  |> 
             rename(Murder = Assault)) + # renames the variable for the plot
    labs(
@@ -1872,6 +2276,8 @@ plot %+% (as_tibble(USArrests, rownames = "States")[,c(1,3)]  |>
      title = "Assault Rate per US State"
    )
 ```
+
+![](ggplot2_basics_files/figure-html/unnamed-chunk-97-1.png)<!-- -->
 
 <br>
 
