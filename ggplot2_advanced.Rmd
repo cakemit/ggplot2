@@ -20,7 +20,7 @@ output:
 # Setup
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set( echo = TRUE, message=FALSE, warning=FALSE )
+knitr::opts_chunk$set( echo = TRUE )
 
 library(tidyverse)
 library(lubridate)
@@ -306,7 +306,7 @@ mu <- df |> group_by(sex) |> summarise(grp.mean=mean(weight))
 
 
 ggplot(df, aes(x=weight)) + 
- geom_histogram(aes(y=..density..), colour="black", fill="white")+
+ geom_histogram(aes(y=after_stat(density)), colour="black", fill="white", bins=30)+
  geom_density(alpha=.2, fill="#FF6666") 
 ```
 
