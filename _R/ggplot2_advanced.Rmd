@@ -1,0 +1,1014 @@
+---
+title: ggplot2 Avançado
+author: Claudia Tanaka (claudia.tanaka@ans.gov.br)
+date: "Atualizado em `r format(Sys.time(), '%d/%m/%Y')`"
+
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: true
+    code_folding: show
+    fig_caption: TRUE
+    theme: cerulean
+bibliography: .references/bibliografia.bib
+csl: .references/associacao-nacional-de-pesquisa-e-ensino-em-transportes.csl
+link-citations: true
+nocite: '@*'
+---
+
+
+# Setup {-}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set( echo=TRUE, fig.width=5, fig.height=3 )
+
+library(tidyverse)
+library(patchwork)
+```
+
+\
+
+Theme settings
+
+```{r}
+theme_set(theme_light(base_size=9))
+theme_update(
+  panel.grid.minor = element_blank(),
+  panel.grid.major = element_line(colour="gray90", linewidth=0.2),
+  plot.title    = element_text(size=10, colour="gray30", face="bold"),
+  plot.subtitle = element_text(size= 9, colour="gray50", face='italic'),
+  plot.caption  = element_text(size= 7, colour="gray50", hjust=0),
+  legend.title = element_blank(), 
+  legend.position = "top"
+)
+```
+
+
+\
+
+# DISTRIBUTION PLOTS
+
+
+
+\
+
+```{r}
+set.seed(2021)
+
+data <- 
+  tibble(
+    group = factor(c(rep("Group A", 100), rep("Group B", 250), rep("Group C", 25))),
+    type = factor(c(rep(c("Type X","Type Y"), 187), "Type Y")),
+    value = c(seq(0, 20, length.out=100),
+              c(rep(0, 5), 
+                rnorm(30, 2, .1), 
+                rnorm(90, 5.4, .1), 
+                rnorm(90, 14.6, .1), 
+                rnorm(30, 18, .1),
+                rep(20, 5)),
+              rep(seq(0, 20, length.out=5), 5))
+  ) |> 
+  rowwise() |> 
+  mutate(value = if_else(group=="Group B", value + rnorm(1, 0, .4), value)) |> 
+  ungroup()
+```
+
+
+\
+
+## Histogram
+
+[Advanced histogram features](https://ggplot2.tidyverse.org/reference/geom_histogram.html)
+
+
+\
+
+
+```
+p1 <- ggplot(ggplot2movies::movies, aes(rating)) + 
+  geom_histogram(binwidth = 0.5) +
+  scale_y_continuous(expand=expansion(mult=c(0,.05)), labels=scales::number) +
+  labs(title="Histogram", y="number of movies")
+
+p2 <- ggplot(ggplot2movies::movies, aes(rating)) +
+  geom_histogram(aes(weight = votes), binwidth = 0.5) +
+  scale_y_continuous(expand=expansion(mult=c(0,.05)), labels=scales::number) +
+  labs(title="Weighted Histogram", y = "number of votes")
+
+p1 + p2
+```
+
+\
+
+You can specify a function for calculating binwidth, which is particularly useful when faceting along variables with different ranges because the function will be called once per facet.
+
+```{r}
+economics_long |> 
+  summarise(n = n(),
+            mean = round(mean(value),1),
+            min = round(min(value),1),
+            max = round(max(value),1),
+            .by=variable)
+```
+
+```{r fig.width=6, fig.asp=.55}
+ggplot(economics_long, aes(value)) +
+  facet_wrap(~variable, scales = 'free') +
+  geom_histogram(binwidth=function(x) 2 * IQR(x) / (length(x)^(1/3)), color="white")  +
+  scale_y_continuous(expand=expansion(mult=c(0,.05))) +
+  labs(title="Histograms with facetted binwidth",
+       subtitle="Binwidth calculado por grupo", x=NULL)
+```
+
+\
+
+
+[Is it possible to use stat_function() by group or facet?](https://stackoverflow.com/questions/56560466/is-it-possible-to-use-stat-function-by-group)
+
+
+```{r fig.width=6.5, fig.asp=.55}
+p1 <- 
+  economics_long |> 
+  mutate(media = mean(value), .by=variable) |> 
+  ggplot(aes(x=value)) +
+  facet_wrap(~variable, scales="free") +
+  geom_histogram(aes(y=after_stat(density)), 
+                 binwidth=function(x) 2 * IQR(x) / (length(x)^(1/3)), 
+                 color="white", show.legend=F) +
+  geom_vline(aes(xintercept=media), color="blue")  +
+  scale_y_continuous(expand=expansion(mult=c(0,.05)))
+
+
+for (i in unique(economics_long$variable))  {
+  df <- economics_long |> filter(variable == i)
+  p1 <- p1 +
+    stat_function(data = df,
+                  fun = dnorm,
+                  args = list(mean = mean(df$value), sd = sd(df$value)),
+                  color="blue")
+}
+
+p1 + 
+  labs(title="Facetted Histograms with overlaid Gaussian and Mean",
+       subtitle="Binwidth calculado por grupo", x=NULL) 
+```
+
+\
+
+
+```{r}
+data |> 
+  summarise(n = n(),
+            mean = round(mean(value),1),
+            min = round(min(value),1),
+            max = round(max(value),1),
+            .by=group)
+```
+
+```{r fig.width=6.5, fig.asp=.4}
+n_bins <- 10  
+
+# SE QUISER LABEL COM N() TEM QUE CRIAR DF.PLT
+df.plt <- data |> 
+  mutate(
+    media = mean(value),
+    # mediana = median(value),
+    # q1 = quantile(value, .25),
+    # q3 = quantile(value, .75),
+    facet.lbl = fct_reorder(paste0(group, " (n=", n(), ")"), as.numeric(group)), 
+    .by=group
+  )
+
+p1 <- 
+  df.plt |>
+  ggplot(aes(x=value)) +
+  facet_wrap(~facet.lbl, scales="free_x") +
+  
+  geom_histogram(aes(y=after_stat(density), fill=facet.lbl), color="white", show.legend=F,
+                 # binwidth=function(x) 2 * IQR(x) / (length(x)^(1/3)),
+                 bins=n_bins) +
+  
+  geom_vline(aes(xintercept=media), color="black") +
+  # geom_vline(aes(xintercept=q1), color="black") +
+  # geom_vline(aes(xintercept=q3), color="black") +
+  # geom_vline(aes(xintercept=mediana), color="blue") +
+    
+  # Overlay histogram of all observations
+  geom_histogram(data=data, aes(y=after_stat(density), x=value), alpha=.4, 
+                 # binwidth=function(x) 2 * IQR(x) / (length(x)^(1/3)),
+                 bins=n_bins) +
+  
+  scale_fill_brewer(type = "qual", palette = "Set1") +
+  scale_y_continuous(expand=expansion(mult=c(0,.05)))
+
+for (i in unique(df.plt$facet.lbl))  {
+  df <- df.plt |> filter(facet.lbl == i)
+  p1 <- p1 +
+    stat_function(data = df,
+                  fun = dnorm,
+                  args = list(mean = mean(df$value), sd = sd(df$value)),
+                  color="black")
+}
+
+p1 + 
+  labs(title="Facetted Histograms with overlaid Gaussian and Mean",
+       subtitle = "Shaded gray histograms show the distribution of all data over each group",
+       x=NULL, y=NULL)
+```
+
+\
+
+```{r include=FALSE}
+rm(df.plt, df, p1, p2, i, n_bins); gc()
+```
+
+
+\
+
+[Histogram with normal curve and count on y-axis](https://stackoverflow.com/questions/6967664/ggplot2-histogram-with-normal-curve)
+
+
+```{r fig.width=6, fig.asp=.5}
+# bw = .25
+# ybreaks = seq(0,150,25) 
+# n_obs = sum(!is.na(dists))
+# 
+# dists |> 
+#   filter(distribution %in% c("Gaussian")) |>
+#   ggplot(aes(x=value)) + 
+#   geom_histogram(aes(y=after_stat(density)), binwidth=.25, color="black") + 
+#   
+#   stat_function(fun=function(x) dnorm(x, mean=mean(dists$value), sd=sd(dists$value)),
+#                 color="darkorange") +
+#   geom_vline(aes(xintercept=mean(value)), color="darkorange") + 
+#   
+#   # Rescale the y axis
+#   scale_y_continuous(
+#     "Frequency", 
+#     breaks=round(seq(0,150,25)/(after_stat(width) * after_stat(count)),3)
+#   ) +
+#   
+#   theme(panel.grid.major=element_blank()) +
+#   labs(title="Option 1: Plot both histogram and density curve as density then rescale the y axis",
+#        subtitle="On primary axis")
+```
+
+\
+
+```{r fig.width=6, fig.asp=.5}
+# bw = .25
+# ybreaks = seq(0,150,25) 
+# 
+# dists |> 
+#   filter(distribution %in% c("Normal", "Log Normal")) |>
+#   ggplot(aes(x=value)) + 
+#   geom_histogram(aes(y=after_stat(density)), binwidth=bw, color="black", fill="white") + 
+#   # Overlay plot of a normal distribution density function scaled to the dists
+#   stat_function(fun=function(x) dnorm(x, mean=mean(dists$value), sd=sd(dists$value)),
+#                 color="darkorange", size=.65) +
+#   # Plot the mean
+#   geom_vline(aes(xintercept=mean(value)), color="blue", linewidth=.7) +
+#   facet_wrap(~distribution, nrow=1, scales="free") + 
+#   scale_y_continuous("Density", sec.axis=sec_axis(transform= ~ . * bw * n_obs, 
+#                                                   name="Counts", 
+#                                                   breaks=ybreaks)) +
+#   theme(panel.grid.major=element_blank()) +
+#   labs(title="Option 2: Rescale the density curve using stat_function",
+#        subtitle="On secondary axis")
+```
+
+
+\
+
+## Density plot
+
+[Artigo: Understanding Different Kinds of Distributions in Statistics](https://medium.com/@sachinsoni600517/understanding-different-kinds-of-distributions-in-statistics-0d5ad820ed6a)
+
+\
+
+```{r img11, echo=FALSE, out.width=600, fig.cap = "Figure 1.1. Distribuições mais comuns"}
+knitr::include_graphics(".imgs/Distributions.png")
+```
+
+
+
+\
+
+Distribution data
+
+```{r}
+set.seed(0)
+n_obs <- 1000
+
+dists <- 
+  rbind(
+  data.frame(
+    distribution = "Gaussian",
+    value = rnorm(n_obs),
+    group = factor(rep(c("Group A", "Group B"), each=n_obs/2))
+  ),
+  data.frame(
+    distribution = "Uniform",
+    value = runif(n_obs),
+    group = factor(rep(c("Group A", "Group B"), each=n_obs/2))
+  ),
+  data.frame(
+    distribution = "Log Normal",
+    value = rlnorm(n_obs),
+    group = factor(rep(c("Group A", "Group B"), each=n_obs/2))
+  ),
+  data.frame(
+    distribution = "Beta",
+    value = rbeta(n_obs, shape1=10, shape2=1),
+    group = factor(rep(c("Group A", "Group B"), each=n_obs/2))
+  )
+) |> 
+  mutate(distribution = factor(distribution, levels=c("Gaussian", "Log Normal", "Beta", "Uniform")))
+```
+
+\
+
+```{r include=FALSE}
+rm(n_obs); gc()
+```
+
+\
+
+
+```{r}
+dists |> 
+  summarise(n = n(),
+            mean = round(mean(value),1),
+            min = round(min(value),1),
+            max = round(max(value),1),
+            .by=distribution)
+```
+
+
+Density plot with mean line in red
+
+```{r fig.width=4.5, fig.asp=.8}
+dists |> 
+  mutate(media = mean(value), .by=distribution) |>
+  ggplot(aes(x=value, group=distribution)) + 
+  facet_wrap(~distribution, nrow=2, scales="free") +
+  geom_histogram(aes(y=after_stat(density)), 
+                 binwidth=function(x) 2 * IQR(x) / (length(x)^(1/3)), 
+                 color="black", fill="white") +
+  geom_density(color="slategray4", fill="slategray", alpha=.5) + 
+  geom_vline(aes(xintercept=media), color="red", linewidth=.5) +
+  
+  scale_y_continuous(expand=expansion(mult=c(0,0.05))) +
+  labs(title="Density plot with mean line in red", 
+       subtitle="Binwidth calculado por grupo",
+       x=NULL, y=NULL)
+```
+
+
+\
+
+```{r fig.width=4.5, fig.asp=.8}
+dists |> 
+  filter(distribution != "Exponential") |> 
+  ggplot(aes(x=value, color=distribution, fill=distribution)) + 
+  facet_wrap(~distribution, scales="free") +
+  geom_density(color="slategray4", fill="slategray", alpha=.5) + 
+  stat_ecdf(linewidth=.6, show.legend=F) +
+  scale_color_brewer(palette="Set1") +
+  labs(title="Empirical Cumulative Density Function", y=NULL, x=NULL)
+```
+
+
+\
+
+## Box plot
+
+
+
+```{r}
+data |> 
+  summarise(n = n(),
+            mean = round(mean(value),1),
+            min = round(min(value),1),
+            max = round(max(value),1),
+            .by=group)
+```
+
+
+
+```{r fig.width=5, fig.height=3}
+data |> 
+  ggplot(aes(x=group, y=value, fill=type)) + 
+  geom_boxplot(staplewidth=.5) + 
+  labs(title="Basic grouped boxplot", x=NULL, y=NULL)
+```
+
+
+\
+
+Box plots combine many summary statistics into one chart. But they also have a high potential of misleading the audience. 
+
+How big is the sample size? \
+
+Are there underlying patterns in the data? 
+
+
+```{r fig.width=5, fig.height=3}
+## function to return label and label position
+pltLbln <- function(x){
+  return(data.frame(y = median(x) * .9, 
+                    label = paste0("n = ",length(x))))
+}
+
+ggplot(data, aes(x=group, y=value)) +
+  geom_boxplot(fill="grey92", staplewidth=.5) +
+  # use summary function to add text labels
+  stat_summary(geom="text", fun.data=pltLbln, size=3) +
+  labs(title="Boxplot with number of observations annotated",
+       x=NULL, y=NULL)
+```
+
+\
+
+```{r fig.width=5, fig.height=3}
+## function to return label and label position
+pltLbln <- function(x){
+  return(data.frame(y = median(x) * .9, 
+                    label = paste0("n = ",length(x))))
+}
+
+ggplot(data, aes(x=type, y=value)) +
+  geom_boxplot(fill="grey92", staplewidth=.5) +
+  facet_wrap(~group) +
+  ## use summary function to add text labels
+  stat_summary(geom="text", fun.data=pltLbln, size=2.5)  +
+  labs(title="Faceted boxplot with number of observations annotated", x=NULL, y=NULL)
+```
+
+
+\
+
+```{r fig.width=5, fig.height=3}
+ggplot(data, aes(x=group, y=value)) +
+  geom_boxplot(fill="grey92", staplewidth=.5) +
+  ## use either geom_point() or geom_jitter()
+  geom_point(color="red", size=1.5, alpha=.3, position=position_jitter(seed=1, width=.2)) +
+  labs(title="Boxplot with data points", x=NULL, y=NULL)
+```
+
+\
+
+Oh, the patterns are very different! Values of Group 1 are uniformly distributed. The values in Group 2 are clustered with a distinct gap around the group’s median! And the few observations of Group 3 are all integers.
+
+
+```{r}
+ggplot(data, aes(x=group, y=value)) +
+  geom_boxplot(fill = "grey92", staplewidth=.5) +
+  geom_violin(linewidth=.6, alpha=.4, scale="count", color="blue", bw=.5) +
+  labs(title="Including violin density plot",
+       subtitle="Violins scaled to number of observations",
+       x=NULL, y=NULL)
+```
+
+\
+
+Alternatively, we may be interested in specifically highlighting the outliers...
+
+```{r}
+suppressWarnings(
+  print(
+    mpg |> 
+      mutate(
+        cyl = as.factor(cyl),
+        outlier.color = case_when(
+          hwy > (quantile(hwy, .75) + 1.5 * IQR(hwy)) ~ "red",
+          hwy < (quantile(hwy, .25) - 1.5 * IQR(hwy)) ~ "blue",
+          .default = NA
+        ), 
+        outlier = case_when(
+          hwy > (quantile(hwy, .75) + 1.5 * IQR(hwy)) ~ hwy,
+          hwy < (quantile(hwy, .25) - 1.5 * IQR(hwy)) ~ hwy,
+          .default = NA
+        ),
+        .by=cyl
+      ) |> 
+      ggplot(aes(x=cyl, y=hwy)) +
+      geom_boxplot(fill="grey92", staplewidth=.5, outlier.shape=NA) +
+      geom_jitter(aes(y=outlier, color=outlier.color), width=.3, alpha=.6, size=2.5) +
+      scale_color_identity() +
+      labs(title="Boxplot with outliers highlighted")
+  )
+)
+```
+
+
+
+```{r include=FALSE}
+rm(pltLbln)
+```
+
+\
+
+
+```{r fig.width=5, fig.asp=.5}
+# SLOWER METHOD:
+p1 <- iris |> 
+  ggplot(aes(x = Species, y = Petal.Width)) +
+  # use stat_summary() to calculate boxplot stats and fence limits for outliers
+  stat_summary(geom="boxplot", fun.data=function(x) {
+    data.frame(
+      ymin   = quantile(x, 0.01),
+      lower  = quantile(x, 0.25),
+      middle = median(x),
+      upper  = quantile(x, 0.75),
+      ymax   = quantile(x, 0.99)
+    )}, outlier.shape = NA, width=0.4, staplewidth=.5) +
+  labs(subtitle="Slower method using stat_summary()", x=NULL, y=NULL)
+
+
+
+# FASTER METHOD:
+# Function to calculate boxplot stats
+bpStats = function (x, probs = c(0.01, 0.25, 0.5, 0.75, 0.99)) {
+  r <- quantile(x, probs=probs, na.rm=T)
+  names(r) <- c("ymin", "lower", "middle", "upper", "ymax")
+  r
+}
+
+
+p2 <- iris |> 
+  ggplot(aes(x=Species, y=Petal.Width)) +
+  stat_summary(fun.data=bpStats, geom="boxplot", width=0.4, staplewidth=.5) +
+  labs(subtitle="Faster method using function", x=NULL, y=NULL)
+
+
+p1 + p2 + 
+  plot_annotation(
+    title = "Boxplot com limites customizados",
+    subtitle="Especially useful for skewed distributions such as Price, Growth rate")
+```
+
+
+```{r include=FALSE}
+rm(bpStats, p1, p2); gc()
+```
+
+
+\
+
+Boxplots for Skewed Distributions using medcouple as robust measurement for limits ([]())
+
+
+```{r fig.width=4, fig.asp=.6}
+# data2 <- rbeta(1000, 10, 1) |> as_tibble() |> 
+#   mutate(ol.tukey = if_else(value<(quantile(value,.25)-1.5*IQR(value)) | 
+#                               value>quantile(value,.75)+1.5*IQR(value), "red", NA))
+# 
+dists |> 
+  filter(distribution == "Beta") |> 
+  ggplot(aes(x=value)) + 
+  geom_histogram(fill="grey92", color="black", bins=10) +
+  scale_y_continuous(expand=expansion(mult=c(0,0.05))) +
+  labs(x="rbeta()", y=NULL)
+```
+
+
+\
+
+HDI is the [highest density interval]{.underline} for a probability distribution for a given probability mass. For a distribution that is not severely multimodal, the HDI is the narrowest interval containing the specified mass, and the `hdi()` function actually returns the narrowest interval. 
+
+
+```{r img12, echo=FALSE, out.width=400, fig.cap = "Figure 1.2. High Density Interval (HDI)"}
+knitr::include_graphics(".imgs/HDIskew.jpg")
+```
+
+
+\
+
+This does not always work properly for multimodal densities, where the HDI may be discontinuous (the horizontal black line in the Figure below). The single interval returned by `hdi()` (the blue line) may incorrectly include values between the modes with low probability density. The density method with `allowSplit = TRUE` gives separate limits for discontinuous HDIs.
+
+
+```{r img13, echo=FALSE, out.width=400, fig.cap = "Figure 1.3. High Density Interval (HDI) for bimodal distribution"}
+knitr::include_graphics(".imgs/HDIbimodal.jpg")
+```
+
+
+\
+
+```{r}
+# Function to calculate High Density Interval
+hdiStat = function(x, credMass=0.5) {
+  r = unname(HDInterval::hdi(x, credMass=credMass))
+  r = c(y=r[1], yend=r[2])
+  r
+}
+
+# SLOWER METHOD:
+p1 <- dists |>
+  filter(distribution == "Beta") |>
+  mutate(ol.tukey.clr = case_when(value > (quantile(value, .75) + 1.5 * IQR(value)) ~ "red",
+                                  value < (quantile(value, .25) - 1.5 * IQR(value)) ~ "red",
+                                  .default = NA)) |> 
+  
+  ggplot(aes(y=value, x="Tukey")) +
+  
+  # Add Tukey boxplot 
+  geom_boxplot(outlier.shape=NA, width=0.4, staplewidth=.5) +
+  # Add outliers with jitter
+  geom_jitter(aes(color=ol.tukey.clr), width=.2, size=2, shape=1, alpha=.5) +
+  scale_color_identity() +
+  # Add HDI
+  stat_summary(fun.data=hdiStat, geom="segment", 
+               position=position_nudge(x=-0.4), colour="orange", linewidth=.9,
+               arrow=arrow(angle=90, ends="both", length=unit(0.1, "cm"))) +
+  
+  labs(title="Tukey BoxPlot with HDI in orange", x=NULL, y=NULL) +
+  coord_flip()
+
+
+# Function to calculate boxplot stats
+bpStats = function (x) {
+  r <- robustbase::adjboxStats(x)$stats
+  names(r) <- c("ymin", "lower", "middle", "upper", "ymax")
+  r
+}
+
+p2 <- dists |> 
+  filter(distribution == "Beta") |>
+  mutate(ol.adjbp.clr = if_else(
+    value < min(robustbase::adjboxStats(value)$stats) 
+    | value > max(robustbase::adjboxStats(value)$stats), "red", 
+    NA
+  )) |> 
+  ggplot(aes(y=value, x="medcouple")) +
+  # # Add fences (outlier limits)
+  # stat_summary(aes(xend="rbeta()"), geom="segment", fun.data = segment.stat, 
+  #              arrow=arrow(angle=90, ends="both", length=unit(0.2, "cm"))) +
+  # Add boxplot
+  stat_summary(fun.data=bpStats, geom="boxplot",
+               outlier.shape=NA, width=0.4, staplewidth=.5) +
+  # Add outliers with jitter
+  geom_jitter(aes(color=ol.adjbp.clr), width=.15, size=2, shape=1) +
+  scale_color_identity() +
+  
+  labs(title="Adjusted BoxPlot for skewed distributions", x=NULL, y=NULL) +
+  coord_flip()
+
+suppressWarnings(print(p1/p2 + plot_layout(axes="collect")))
+```
+
+```{r include=FALSE}
+rm(p1,p2,bpStats, hdiStat)
+```
+
+
+\
+
+## Violin plot
+
+
+Violin plots can be used to visualize the distribution of numeric variables. It’s basically a mirrored density curve, representing the number of data points along a continuous axis.
+
+```{r fig.width=5, fig.height=3}
+ggplot(data, aes(x = group, y = value)) + 
+  geom_violin(fill="grey72", color=NA) +
+  labs(title="Basic violin plot", y=NULL, x=NULL)
+```
+
+\
+
+By default, the violin plot can look a bit odd. The default setting (scale = "area") is misleading. Group 1 looks almost the same as Group 3, while consisting of four times as many observations. Also, the default standard deviation of the smoothing kernel is not optimal in our case since it hides the true pattern by smoothing out areas without any data.
+
+We can manipulate both defaults by setting the width to the number of observations and adjusting the bandwidth (`bw`).
+
+```{r fig.width=5, fig.height=3}
+ggplot(data, aes(x = group, y = value)) +
+  geom_violin(
+    fill="grey72", color=NA,
+    scale = "count", ## width of violins mapped to # observations
+    bw = .4          ## custom bandwidth (smoothing)
+  ) +
+  labs(title="Violin plot scaled to n_obs in each group and bw=0.4", y=NULL, x=NULL)
+```
+
+\
+
+The violin plot allows an explicit representation of the distribution but doesn’t provide summary statistics. To get the best of both worlds, it is often mixed with a box plot—either a complete box plot with whiskers and outliers or only the box indicating the median and interquartile range (IQR):
+
+```{r fig.width = 6, fig.asp=.4}
+p1 <- ggplot(data, aes(x = group, y = value)) +
+  geom_violin(fill="grey72", color=NA, scale="count", bw=.5) +
+  geom_boxplot(
+    staplewidth = 1, 
+    fill = NA,  ## remove fill
+    width = .1  ## reduce width
+  ) +
+  labs(subtitle="Complete boxplot", x=NULL, y=NULL)
+
+p2 <- ggplot(data, aes(x = group, y = value)) +
+  geom_violin(fill="grey72", color=NA, scale="count", bw=.5) +
+  geom_boxplot(
+    fill = NA,         ## remove fill
+    width = .1,        ## reduce width
+    coef = 0,          ## remove whiskers
+    outlier.shape = NA ## remove outliers
+  ) +
+  labs(subtitle="Without whiskers and outliers", x=NULL, y=NULL)
+
+p1 + p2 +
+  plot_annotation(title="Violin plot with boxplot")  
+```
+
+\
+
+You might wonder: why should you use violins instead of box plots with superimposed raw observations? Well, in case you have many more observations, all approaches of plotting raw data become difficult. In terms of readability as well as in terms of computational time. Violin plots are a good alternative in such a case, and even better in combination with some summary stats. 
+
+
+\
+
+## Raincloud
+
+\
+
+[Visualizing distributions with Raincloud Plots in ggplot2](https://www.cedricscherer.com/2021/06/06/visualizing-distributions-with-raincloud-plots-and-how-to-create-them-with-ggplot2/)
+
+Raincloud plots can be used to visualize raw data, the distribution of the data, and key summary statistics at the same time. Actually, it is a hybrid plot consisting of a halved violin plot, a box plot, and the raw data as some kind of scatter.
+
+Here, I combine two layers from the `{ggdist}` package, namely `stat_dots()` to draw the rain and `stat_halfeye()` to draw the cloud. Both are plotted with some justification to place them next to each other and make room for the box plot. I also remove the slab interval from the halfeye by setting `.width = 0` and `point_colour = NA`. The plot needs some manual styling and the values for justification and the number of bins depends a lot on the data. To get rid of the white space on the left, we simply add a limit the x axis.
+
+```{r}
+data |> 
+  mutate(group = fct_rev(group)) |> 
+  ggplot(aes(y=group, x=value, fill=group)) + 
+  ## add half-violin plots
+  ggdist::stat_halfeye(
+    height = .6,          
+    adjust = .2,         # custom bandwidth
+    justification = -.2, # move geom to the right
+    .width = 0,          # remove slab interval
+    point_colour = NA
+  ) + 
+  geom_boxplot(width = .12, outlier.shape=NA, staplewidth=1, color="gray50") +
+  ## add dot plots
+  ggdist::stat_dots(
+    side = "left",       # orientation to the left
+    justification = 1.1, # move geom to the left
+    binwidth = .15,      # adjust grouping (binning) of observations 
+    overflow = "compress",
+    color = "gray50", fill="gray50"
+  ) + 
+  
+  ## remove white spaces at top/bottom
+  coord_cartesian(ylim = c(1.2, 2.8)) +
+  
+  scale_fill_brewer(palette="Set1") +
+  theme(panel.grid.major.y = element_blank(),
+        legend.position="none") +
+  labs(title="Basic Raincloud plot", x=NULL, y=NULL)
+```
+
+\
+
+
+One can also solely rely on layers from the `{ggdist}` package by using the default halfeye which consists of a density curve and a slab interval.
+
+But...
+
+While I love the reduced design and the possibility to indicate two different ranges (here the **interquartile range** and the **95% quantile**) I admit that this alternative is less intuitive and potentially even misleading since they look more like credible intervals than box plots. Maybe a bit like the minimal box plots proposed by Edward Tufte but still I definitely would add a note to be sure the reader understands what the slabs show.
+
+```{r}
+data |> 
+  mutate(group = fct_rev(group)) |> 
+  ggplot(aes(y=group, x=value, fill=group)) + 
+  ggdist::stat_halfeye(
+    adjust = .2,
+    height = .6, 
+    .width = c(.5, .95) # set slab interval to show IQR and 95% data range
+  ) + 
+  ggdist::stat_dots(
+    side = "left", 
+    justification = 1.05, 
+    binwidth = .18,
+    color = "gray50", fill="gray50"
+  ) +
+  coord_cartesian(ylim = c(1.2, 2.8)) +
+  
+  scale_fill_brewer(palette="Set1") +
+  theme(panel.grid.major.y=element_blank(),
+        legend.position="none") +
+  labs(title="Raincloud plot using default ggdist 'slab'", x=NULL, y=NULL,
+       subtitle="Slab interval shows IQR and 95% data range")
+```
+
+\
+
+Of course, one could also add a true jitter instead of a dot plot or even a barcode. Now, I use `geom_half_dotplot()` from the `{gghalves}` package. Why? Because it comes with the possibility to add some justification which is not possible for the default layers `geom_point()` and `geom_jitter()`.
+
+Note that the `{gghalves}` package adds also some jitter along the y axis which is far from optimal. The package provides a half–box plot alternative as well but I personally will never consider or recommend these as an option because the box plot itself can be reduced easily in width without you getting into trouble. At the same time, I believe that these “half–box plots” have an uncommon look and thus the potential to confuse readers.
+
+A good alternative may be to place the jittered points on top of the box plot by using geom_jitter() (or geom_point()):
+
+```{r}
+data |> 
+  mutate(group = fct_rev(group)) |>
+  ggplot(aes(y=group, x=value, fill=group)) + 
+  ggdist::stat_halfeye(
+    adjust = .2, 
+    height = .6, 
+    .width = 0, 
+    justification = -.3, 
+    point_colour = NA
+  ) + 
+  geom_boxplot(width=.25, outlier.shape=NA) +
+  geom_point(color="gray20", size=1.3, alpha=.3, shape=1,
+             position = position_jitter(seed=1, height=.2)) + 
+  coord_cartesian(ylim = c(1.2, NA), clip = "off") +
+  
+  scale_fill_brewer(palette="Set1") +
+  theme(panel.grid.major.y=element_blank(),
+        legend.position="none") +
+  labs(title="Raincloud plot with jittered raw data points", x=NULL, y=NULL)
+```
+
+
+
+```{r, include=FALSE}
+rm(p1, p2); gc()
+```
+
+
+\
+
+# PAREI AQUI
+
+Finalizar normality tests com capítulo do livro marcado no O'Reilly [@king_inferential_2019]
+
+
+# Normality tests
+
+[Datanovia Normality Test in R](https://www.datanovia.com/en/lessons/normality-test-in-r/)
+
+\
+
+## QQ plot
+
+Q-Q plot (or quantile-quantile plot) draws the correlation between a given sample and the normal distribution. A 45-degree reference line is also plotted.
+
+If all the points fall approximately along this reference line, we can assume normality.
+
+\
+
+```{r fig.width=6, fig.asp=.5}
+rnorm_data <- dists |> filter(distribution == "Gaussian")
+rexp_data <- dists |> filter(distribution == "Log Normal")
+
+p1 <- ggpubr::ggqqplot(rnorm_data$value, main="Normal", shape=1)
+
+p2 <- ggpubr::ggqqplot(rexp_data$value, main="Log Normal", shape=1)
+
+p1 + p2 &
+  theme_classic(base_size=9)
+```
+
+\
+
+Visual inspection by itself is usually unreliable. It’s possible to use a **significance test** comparing the sample distribution to a normal one in order to ascertain whether data show or not a serious deviation from normality.
+
+Note that a normality test is sensitive to sample size. Small samples $<30$ most often pass normality tests. 
+
+The chi-square test can also be used to determine if a sample fits a normal distribution and is commonly applied to larger samples. The normality test can be used to help decide whether to use a parametric or nonparametric hypothesis test.
+
+Top 3 normality tests:
+
+*  Shapiro-Wilk’s test
+*  Chi-square test
+*  Kolmogorov-Smirnov test
+*  Anderson-Darling test
+
+\
+
+## Shapiro-Wilk’s test
+
+The Shapiro–Wilk test can be used to decide whether or not a sample fits a normal distribution, and it is commonly used for small samples. It was published in 1965 by Samuel Sanford Shapiro and Martin Wilk [@shapiro_analysis_1965]. The Shapiro–Wilk test statistic ($W$) is basically a measure of how well the ordered and standardized sample quantiles fit the standard normal quantiles.
+
+
+Advantages:
+
+*  Most widely recommended in literature
+
+*  Monte Carlo simulation has found that Shapiro–Wilk has the best power for a given significance, followed closely by Anderson–Darling when comparing the Shapiro–Wilk, Anderson-Darling, Kolmogorov–Smirnov, and Lilliefors tests. [@razali_power_2011]
+
+
+Disadvantages:
+
+*  Does not to work well in samples with many identical values.
+
+*  Sensitive to sample size. If the sample size is sufficiently large ($n>50$) this test may detect even trivial departures from the null hypothesis (i.e., although there may be some statistically significant effect, it may be too small to be of any practical significance); thus, additional investigation of the effect size is typically advisable, e.g., a Q–Q plot.
+
+
+
+\
+
+```{r}
+paste("n=", nrow(rnorm_data))
+```
+
+
+Shapiro test for 1 variable:
+
+```{r}
+shapiro.test(rnorm_data$value)
+```
+
+From the output, the p-value > 0.05 implying that the distribution of the data are not significantly different from normal distribution. In other words, we can assume the normality.
+
+\
+
+Shapiro test for grouped data:
+
+```{r}
+rnorm_data |>
+  group_by(group) |>
+  rstatix::shapiro_test(value) |> 
+  mutate(lg_normal = p > .05)
+```
+
+\
+
+Shapiro test for multiple variables:
+
+```{r}
+iris |> 
+  rstatix::shapiro_test(Sepal.Length, Petal.Width) |> 
+  mutate(lg_normal = p > .05)
+```
+
+\
+
+## Kolmogorov-Smirnov test
+
+[Article: Kolmogorov–Smirnov Test](https://towardsdatascience.com/kolmogorov-smirnov-test-84c92fb4158d)\
+[Wikipedia](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test)
+
+\
+
+The KS test is a non-parametric test that compares two cumulative distribution functions and returns the maximum difference $D$ between them. It quantifies a distance between the empirical cumulative distribution function (CDF) of the sample and the CDF of the reference theoretical distribution, or between the empirical distribution functions of two samples. 
+
+In the special case of testing for normality of the distribution, samples are standardized and compared with a standard normal distribution. This is equivalent to setting the mean and variance of the reference distribution equal to the sample estimates, and it is known that using these to define the specific reference distribution changes the null distribution of the test statistic. Note that various studies have found that, even in this corrected form, the test is less powerful for testing normality than the Shapiro–Wilk test or Anderson–Darling test. However, these other tests have their own disadvantages. 
+
+[Article: Kolmogorov-Smirnov(K-S) Test](https://seymatas.medium.com/kolmogorov-smirnov-k-s-test-5e1bf3b0ab2d)
+
+Advantages:
+
+*  It is sensitive to the location, scale, and shape of the distribution.
+
+*  There are not sample size restrictions, the tests work for small samples.
+
+*  You do not have to know the underlying population distribution before running the test. It is a non-parametric test, it doesn’t require the data to follow a normal distribution, but it can also compare a sample distribution to any theoretical distribution, including normal.
+
+
+Disadvantages:
+
+*  It is sensitive to the location, scale, and shape of the distribution.
+
+*  K-S tests are more sensitive to deviations near the center of the distribution than at the tails.
+
+*  It usually can’t be used for discrete distributions, because the K-S test relies on the fact that if X is a random variable with CDF F then F(X) is a uniform random variable. However if X is not continuous, 𝐹(𝑋)=𝑋 is not a uniform distribution.
+
+\
+
+```{r img31, echo=FALSE, out.width=300, fig.cap="Figure 3.1. Kolmogorov-Smirnov statistic. The red line is a model CDF, the blue line is an empirical CDF, and the black arrow is the KS statistic."}
+knitr::include_graphics(".imgs/Kolmogorov Smirnov_wikipedia.png")
+```
+
+
+\
+
+The R package `KSgeneral` computes the KS test statistics and its p-values under arbitrary, possibly discrete, mixed or continuous null distribution.
+
+R's statistics base-package also implements the test as `ks.test` in its `stats` package.
+
+```{r}
+ks.test(rnorm_data$value, "pnorm", mean(rnorm_data$value), sd(rnorm_data$value))
+```
+
+From the output, the p-value > 0.05 implying that the distribution of the data are significantly similar to normal distribution. In other words, we can assume the normality.
+
+\
+
+Comparing results from different normality tests is a good practice. If all tests agree, we can be more confident in the results.
+
+
+```{r img32, echo=FALSE, out.width = 700, fig.cap = "Figure 3.2. The Trinity Matrix Interpretation of Normality Test"}
+knitr::include_graphics(".imgs/medium The Trinity Matrix Interpretation of Normality Test.png")
+```
+
+
+
+
+\
+
+# References {-}
+
+
