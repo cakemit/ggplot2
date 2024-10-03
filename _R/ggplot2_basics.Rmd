@@ -45,16 +45,19 @@ data(package=.packages(all.available=TRUE))
 My favorite custom theme:
 
 ```{r}
-theme_set(theme_light(base_size=9))
+theme_set(theme_light(base_size=12))
 theme_update(
   panel.grid.minor = element_blank(),
   panel.grid.major = element_line(colour="gray90", linewidth=0.2),
-  plot.title    = element_text(size=10, colour="gray30", face="bold"),
-  plot.subtitle = element_text(size= 9, colour="gray50", face='italic'),
-  plot.caption  = element_text(size= 7, colour="gray50", hjust=0),
+  strip.background = element_rect(fill="gray50", colour="gray50"),
+  plot.title    = element_text(size=11, colour="gray30", face="bold"),
+  plot.subtitle = element_text(size=10, colour="gray50", face='italic'),
+  plot.caption  = element_text(size= 8, colour="gray50", hjust=0),
+  axis.text     = element_text(size= 8),
   legend.title = element_blank(), 
   legend.position = "top"
 )
+
 ```
 
 \
@@ -908,6 +911,8 @@ p4 <- ggplot(mtcars) + geom_bar(aes(carb))
 \
 
 ## Facets
+
+[How to Change GGPlot Facet Labels](https://www.datanovia.com/en/blog/how-to-change-ggplot-facet-labels/)
 
 [Facets for ggplot in R](https://www.datacamp.com/community/tutorials/facets-ggplot-r?utm_source=adwords_ppc&utm_campaignid=1455363063&utm_adgroupid=65083631748&utm_device=c&utm_keyword=&utm_matchtype=b&utm_network=g&utm_adpostion=&utm_creative=278443377086&utm_targetid=aud-392016246653:dsa-429603003980&utm_loc_interest_ms=&utm_loc_physical_ms=9100824&gclid=EAIaIQobChMIroK6r-Kh8wIVkw-RCh0s7gc5EAAYASAAEgJRDfD_BwE)
 
